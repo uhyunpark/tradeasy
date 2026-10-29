@@ -1,5 +1,9 @@
-// Turn SDK / RPC / simulation errors into one short Korean sentence. Raw text stays in "details".
+// Turn SDK / RPC / simulation errors into one short sentence (Korean key, translated by i18n). Raw text stays in "details".
+import '../i18n-en.js';
+import '../i18n.js';
 import * as tokenMeta from './meta.js';
+
+const T = (k, v) => globalThis.TE_I18N.T(k, v);
 
 const QUOTES = { pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn: 'PUMP', EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
   Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT', USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB: 'USD1',
@@ -12,13 +16,13 @@ const RULES = [
     const meta = tokenMeta.get(m[1]);
     const sym = QUOTES[m[1]] || (meta && meta.symbol) || null;
     return sym
-      ? `${sym} 페어 코인입니다. SOL이 아니라 ${sym}로 사고파는 풀이라 Tradeasy는 아직 지원하지 않습니다.`
-      : `SOL이 아닌 다른 토큰(${m[1].slice(0, 4)}…${m[1].slice(-4)})과 페어인 코인이라 Tradeasy는 아직 지원하지 않습니다.`;
+      ? T('{sym} 페어 코인입니다. SOL이 아니라 {sym}로 사고파는 풀이라 Tradeasy는 아직 지원하지 않습니다.', { sym })
+      : T('SOL이 아닌 다른 토큰({mint})과 페어인 코인이라 Tradeasy는 아직 지원하지 않습니다.', { mint: `${m[1].slice(0, 4)}…${m[1].slice(-4)}` });
   }],
   [/only SOL-(?:quoted|paired)/i, 'SOL이 아닌 다른 토큰과 페어인 코인이라 Tradeasy는 아직 지원하지 않습니다.'],
   [/wallet is locked/i, '지갑이 잠겨 있습니다. Tradeasy 팝업에서 잠금을 해제하세요.'],
   [/API key is not set|no rpc/i, 'Helius가 연결되지 않았습니다. Tradeasy 팝업 > 설정에서 API key를 입력하세요.'],
-  [/exceeds max per trade \(([\d.]+)\)/i, (m) => `1회 최대 금액(${m[1]} SOL)을 넘습니다. Tradeasy 설정에서 바꿀 수 있습니다.`],
+  [/exceeds max per trade \(([\d.]+)\)/i, (m) => T('1회 최대 금액({max} SOL)을 넘습니다. Tradeasy 설정에서 바꿀 수 있습니다.', { max: m[1] })],
   [/wallet has no SOL|AccountNotFound/i, 'Tradeasy 지갑에 SOL이 없습니다. 먼저 입금하세요.'],
   [/no token balance to sell/i, '팔 토큰이 Tradeasy 지갑에 없습니다.'],
   [/graduated to Raydium AMM v4/i, 'Raydium AMM v4로 졸업한 토큰이라 아직 지원하지 않습니다.'],
@@ -46,7 +50,7 @@ export function explain(...parts) {
   const text = parts.filter(Boolean).map((p) => (typeof p === 'string' ? p : JSON.stringify(p))).join('\n');
   for (const [re, msg] of RULES) {
     const m = re.exec(text);
-    if (m) return typeof msg === 'function' ? msg(m) : msg;
+    if (m) return typeof msg === 'function' ? msg(m) : T(msg);
   }
   return null;
 }

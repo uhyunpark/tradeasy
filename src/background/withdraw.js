@@ -1,7 +1,11 @@
+import '../i18n-en.js';
+import '../i18n.js';
 // Send SOL out of the Tradeasy wallet (popup only). Plain System transfer via the RPC.
 import { PublicKey, SystemProgram, ComputeBudgetProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { getKeypair } from './vault.js';
 import * as market from './market.js';
+
+const T = (k, v) => globalThis.TE_I18N.T(k, v);
 
 const PRIORITY_MICRO = 20_000; // tiny priority (~0.000004 SOL at 200 CU... capped below)
 const CU = 1_000;
@@ -11,16 +15,16 @@ export async function plan({ to, sol, max }) {
   const kp = await getKeypair();
   if (!kp) throw new Error('wallet is locked');
   let dest;
-  try { dest = new PublicKey(String(to || '').trim()); } catch (_) { throw new Error('받는 주소가 올바른 Solana 주소가 아닙니다'); }
-  if (dest.equals(kp.publicKey)) throw new Error('Tradeasy 지갑 자신에게는 보낼 수 없습니다');
+  try { dest = new PublicKey(String(to || '').trim()); } catch (_) { throw new Error(T('받는 주소가 올바른 Solana 주소가 아닙니다')); }
+  if (dest.equals(kp.publicKey)) throw new Error(T('Tradeasy 지갑 자신에게는 보낼 수 없습니다'));
   const c = await market.connection();
   const bal = await c.getBalance(kp.publicKey, 'confirmed');
   const lamports = max ? bal - FEE_LAMPORTS : Math.round(Number(sol) * 1e9);
-  if (!(lamports > 0)) throw new Error(max ? '보낼 수 있는 SOL이 없습니다' : '금액을 입력하세요');
-  if (lamports + FEE_LAMPORTS > bal) throw new Error(`잔고가 부족합니다 (잔고 ${(bal / 1e9).toFixed(6)} SOL, 수수료 ${(FEE_LAMPORTS / 1e9).toFixed(6)} SOL)`);
+  if (!(lamports > 0)) throw new Error(max ? T('보낼 수 있는 SOL이 없습니다') : T('금액을 입력하세요'));
+  if (lamports + FEE_LAMPORTS > bal) throw new Error(T('잔고가 부족합니다 (잔고 {bal} SOL, 수수료 {fee} SOL)', { bal: (bal / 1e9).toFixed(6), fee: (FEE_LAMPORTS / 1e9).toFixed(6) }));
   // the destination must end up rent-exempt if it is a brand new account
   const info = await c.getAccountInfo(dest, 'confirmed');
-  if (!info && lamports < 890_880) throw new Error('새 주소로는 최소 0.00089088 SOL 이상 보내야 합니다');
+  if (!info && lamports < 890_880) throw new Error(T('새 주소로는 최소 0.00089088 SOL 이상 보내야 합니다'));
   return { kp, dest, lamports, bal, newAccount: !info };
 }
 

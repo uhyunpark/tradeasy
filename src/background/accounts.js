@@ -1,3 +1,5 @@
+import '../i18n-en.js';
+import '../i18n.js';
 // Empty token accounts: list them and close them in batches to get the rent back (settings, popup only).
 // Only zero-balance accounts owned and closable by the Tradeasy wallet; rent always goes back to the wallet.
 import { PublicKey, ComputeBudgetProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
@@ -5,6 +7,8 @@ import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, createCloseAccountInstruction 
 import { getKeypair } from './vault.js';
 import * as market from './market.js';
 import * as tokenMeta from './meta.js';
+
+const T = (k, v) => globalThis.TE_I18N.T(k, v);
 
 const PER_TX = 20;              // ~1.0 KB per tx with 20 closes
 const CU_PER_CLOSE = 3_000;
@@ -41,7 +45,7 @@ export async function closeAll(accounts, confirm) {
   if (!kp) throw new Error('wallet is locked');
   const want = new Set((accounts || []).map(String));
   const fresh = (await scan()).list.filter((a) => want.has(a.account));
-  if (!fresh.length) throw new Error('정리할 빈 토큰 계정이 없습니다');
+  if (!fresh.length) throw new Error(T('정리할 빈 토큰 계정이 없습니다'));
   const c = await market.connection();
   const out = { closed: 0, lamports: 0, signatures: [], failed: 0 };
   for (let i = 0; i < fresh.length; i += PER_TX) {

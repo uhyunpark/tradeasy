@@ -1,6 +1,6 @@
 # Tradeasy
 
-Chrome MV3 extension for Solana trading terminals (Axiom, GMGN). The user keeps using the terminal's UI and presets; Tradeasy builds, signs and sends the trade itself from a hot wallet inside the extension via Helius Sender, so the terminal fee (~1%) is not charged. Internal names use the prefix `te` (CSS classes `te-*`, `teMode_axiom`, message tag `__TRADEASY__`). No server, BYOK (one Helius API key for RPC + Sender). UI text is Korean; code and comments are English.
+Chrome MV3 extension for Solana trading terminals (Axiom, GMGN). The user keeps using the terminal's UI and presets; Tradeasy builds, signs and sends the trade itself from a hot wallet inside the extension via Helius Sender, so the terminal fee (~1%) is not charged. Internal names use the prefix `te` (CSS classes `te-*`, `teMode_axiom`, message tag `__TRADEASY__`). No server, BYOK (one Helius API key for RPC + Sender). UI text is Korean or English (setting); code and comments are English.
 
 ## Principles (do not break)
 
@@ -50,6 +50,7 @@ background (service worker) router, state cache, build/verify/sign/send/confirm,
 | `errors.js` | Error → Korean sentence. Names the quote token for non-SOL pairs. |
 | `config.js` | Settings + defaults + `testRpc`. |
 | `vault.js` | Wallet: plain, or PBKDF2 (310k) + AES-GCM with session unlock and auto-lock. |
+| `src/i18n.js`, `src/i18n-en.js` | UI language. Korean text is the key: `T('매수 {sol} SOL', { sol })` returns the English entry when the language is English (falls back to Korean). `dom(root)` translates static popup markup in place. Loaded by the popup, the content script (manifest) and the background (imported by `errors.js`, `config.js`, `withdraw.js`, `accounts.js`). |
 | `src/shims.js`, `src/util-shim.js` | Buffer/process globals and a `util` shim for the browser bundle. |
 
 ## Trade flow
@@ -94,6 +95,13 @@ Not supported directly (and not routed): Raydium AMM v4 (incl. LaunchLab coins t
 - `chrome.storage.local`: config keys (`config.js` `DEFAULTS`), `vault`, `onboard`, `trades`, `positions`, `teMode_axiom` (was `dxMode_axiom` before v0.22; migrated on start).
 - `chrome.storage.session`: `sk` (unlocked key while the lock is on).
 
+## UI language
+
+- Setting: `lang` in `chrome.storage.local` (`ko` | `en`), default from `navigator.language`. Changes apply live in every context (`storage.onChanged`).
+- New UI text: write it in Korean inside `T('…')` (placeholders `{name}`), add the English entry to `src/i18n-en.js`, run `node test/i18n-check.mjs` (fails on missing entries). Static popup text needs only the English entry.
+- Error sentences in `errors.js` are plain Korean strings translated at `explain()` time (never call `T` at module load).
+- e2e: `UI_LANG=en` runs the popup and toasts in English (default `ko`).
+
 ## Chart line
 
 hook.js draws the Tradeasy average buy price on Axiom's TradingView chart: same-origin blob iframe → `contentWindow.tradingViewApi.activeChart()` → `createShape(horizontal_line, { disableSave, lock })`. `createPositionLine` is not available (Trading Platform only).
@@ -105,11 +113,12 @@ Level = avg SOL price × (chart close / Tradeasy mid price), median-smoothed, so
 | Command | What it does |
 |---|---|
 | `npm run build` | Build to `dist/` (load unpacked in `chrome://extensions`). |
-| `npm run test:e2e` | Playwright with the built extension, mocked terminal pages, mocked Helius RPC/Sender. Env: `SITE=gmgn`, `LIVE=1`, `PW=<pw>`, `ORPHAN=1`, `NOMETA=1`; argv: mint protocol Buy\|Sell. Screenshots in `test/out/`. Check that `swErrors`/`popErrors`/`pageErrors` are empty. |
+| `npm run test:e2e` | Playwright with the built extension, mocked terminal pages, mocked Helius RPC/Sender. Env: `SITE=gmgn`, `LIVE=1`, `PW=<pw>`, `ORPHAN=1`, `NOMETA=1`, `UI_LANG=en`; argv: mint protocol Buy\|Sell. Screenshots in `test/out/`. Check that `swErrors`/`popErrors`/`pageErrors` are empty. |
 | `npm run test:offline` | Real background modules against `test/fixtures.json` (mainnet snapshots) for every case in `test/cases.json`: build, fake simulate, quotes. |
+| `node test/i18n-check.mjs` | Lists UI text without an English entry. |
 | `npm run simexport -- <payer> [cases.json]` | Unsigned txs for mainnet `simulateTransaction` (`sigVerify: false`). Buys need a funded payer; sells a payer holding the token. |
 
-Release: bump the version in `build.mjs` and `package.json`, build, run both e2e variants (Axiom, `SITE=gmgn`) and the offline test.
+Release: bump the version in `build.mjs` and `package.json`, build, run both e2e variants (Axiom, `SITE=gmgn`), the offline test and `node test/i18n-check.mjs`.
 
 ## Gotchas
 

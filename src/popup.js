@@ -1,10 +1,11 @@
+const T = (k, v) => globalThis.TE_I18N.T(k, v);
 const $ = (id) => document.getElementById(id);
 const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
 const EXT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>';
 const LOG_ROWS = 8;
 let logOpen = false;
-const COPY_BTN = (attrs) => `<button class="cp" title="복사" aria-label="복사" ${attrs}>${COPY_ICON}</button>`;
+const COPY_BTN = (attrs) => `<button class="cp" title="${T('복사')}" aria-label="${T('복사')}" ${attrs}>${COPY_ICON}</button>`;
 // every copy button: data-copy="text" or data-copy-el="<element id>"
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('.cp');
@@ -27,7 +28,7 @@ const fmtPrice = (n) => {
   const digits = Math.round(n * 10 ** (z + 3)).toString().slice(0, 3);
   return '0.0' + String(z).split('').map((d) => '₀₁₂₃₄₅₆₇₈₉'[d]).join('') + digits;
 };
-const ago = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? `${s}초 전` : `${Math.round(s / 60)}분 전`; };
+const ago = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? T('{n}초 전', { n: s }) : T('{n}분 전', { n: Math.round(s / 60) }); };
 
 let W = null, C = null, OB = null, tab = 'home', liveAsk = false;
 const VIEWS = ['vOnboard', 'vLockSetup', 'vBackup', 'vHelius', 'vLocked', 'vHome', 'vSettings', 'vSend'];
@@ -44,7 +45,7 @@ const setOnboard = async (ob) => { OB = ob; if (ob) await chrome.storage.local.s
 
 function renderStepper() {
   const steps = OB && OB.created === false ? ['wallet', 'lock', 'helius'] : ['wallet', 'backup', 'lock', 'helius'];
-  const names = { wallet: '지갑', backup: '백업', lock: '잠금', helius: 'Helius' };
+  const names = { wallet: T('지갑'), backup: T('백업'), lock: T('잠금'), helius: 'Helius' };
   document.querySelectorAll('.stepper').forEach((el) => {
     const i = steps.indexOf(el.dataset.of);
     el.setAttribute('aria-label', `${i + 1}/${steps.length} ${names[el.dataset.of]}`);
@@ -63,7 +64,7 @@ function view() {
   VIEWS.forEach((x) => show(x, x === v));
   const inSettings = v === 'vSettings' || v === 'vSend', setup = v === 'vOnboard' || !!OB_VIEW_REV[v];
   show('hHome', !inSettings); show('hSettings', inSettings);
-  $('hTitle').textContent = v === 'vSend' ? 'SOL 출금' : '설정';
+  $('hTitle').textContent = v === 'vSend' ? T('SOL 출금') : T('설정');
   show('modeSeg', !inSettings && !setup && v !== 'vLocked');
   show('btnGear', !inSettings && !setup);
   show('siteStatus', !inSettings && !setup);
@@ -100,7 +101,7 @@ async function renderSite() {
   const teSite = cur && cur.name === 'Axiom'; // sites where the terminal's own buttons are executed by Tradeasy
   show('teSwitchWrap', !!teSite);
   if (teSite) { const { teMode_axiom: m } = await chrome.storage.local.get('teMode_axiom'); $('teSwitch').checked = m !== false; }
-  $('siteText').textContent = !cur ? '지원 사이트가 아닙니다' : cur.ok ? `${cur.name}에서 동작 중` : `${cur.name}는 아직 지원하지 않습니다`;
+  $('siteText').textContent = !cur ? T('지원 사이트가 아닙니다') : cur.ok ? T('{site}에서 동작 중', { site: cur.name }) : T('{site}는 아직 지원하지 않습니다', { site: cur.name });
 }
 
 $('teSwitch').addEventListener('change', () => chrome.storage.local.set({ teMode_axiom: $('teSwitch').checked }));
@@ -116,7 +117,7 @@ $('chImport').onclick = () => { show('importBox', true); $('importSk').focus(); 
 $('btnImportCancel').onclick = () => { show('importBox', false); $('importSk').value = ''; };
 $('btnImport').onclick = async () => {
   const secret = $('importSk').value.trim();
-  if (!secret) return say('oMsg', 'private key를 붙여넣어 주세요', 'warn');
+  if (!secret) return say('oMsg', T('private key를 붙여넣어 주세요'), 'warn');
   const r = await send({ type: 'wallet:create', secret });
   $('importSk').value = '';
   if (r.error) return say('oMsg', r.error, 'bad');
@@ -136,8 +137,8 @@ $('btnBackupDone').onclick = async () => { $('backupKey').textContent = ''; awai
 // ---------- onboarding: 3 extension lock (optional) ----------
 $('btnLockSet').onclick = async () => {
   const pw = $('lsPw').value, pw2 = $('lsPw2').value;
-  if (pw.length < 8) return say('lsMsg', '8자 이상 입력하세요', 'warn');
-  if (pw !== pw2) return say('lsMsg', '비밀번호 확인이 일치하지 않습니다', 'warn');
+  if (pw.length < 8) return say('lsMsg', T('8자 이상 입력하세요'), 'warn');
+  if (pw !== pw2) return say('lsMsg', T('비밀번호 확인이 일치하지 않습니다'), 'warn');
   const r = await send({ type: 'wallet:setPassword', oldPassword: null, newPassword: pw });
   if (r.error) return say('lsMsg', r.error, 'bad');
   $('lsPw').value = ''; $('lsPw2').value = ''; say('lsMsg', '');
@@ -160,16 +161,16 @@ function keyStat(id, cls, text) { $(id).className = 'keystat ' + cls; $(id).text
 async function connectKey(inputId, statId) {
   const seq = ++keySeq;
   const v = $(inputId).value.trim();
-  keyStat(statId, 'busy', v ? '연결 확인 중...' : '');
+  keyStat(statId, 'busy', v ? T('연결 확인 중...') : '');
   const r = await send({ type: 'config:set', patch: { heliusApiKey: v } });
   if (seq !== keySeq) return;
-  if (r.error) { keyOk = false; keyStat(statId, 'bad', r.error === 'invalid Helius API key' ? 'API key 형식이 올바르지 않습니다' : r.error); return syncKeyUi(); }
+  if (r.error) { keyOk = false; keyStat(statId, 'bad', r.error === 'invalid Helius API key' ? T('API key 형식이 올바르지 않습니다') : r.error); return syncKeyUi(); }
   C = r;
   if (!v && !C.customRpcUrl) { keyOk = null; keyStat(statId, '', ''); return syncKeyUi(); }
   const t = await send({ type: 'config:test' });
   if (seq !== keySeq) return;
   keyOk = !!t.ok;
-  keyStat(statId, t.ok ? 'ok' : 'bad', t.ok ? `연결됨 · 저장 완료 (${t.ms}ms)` : `연결 안 됨: ${t.error}`);
+  keyStat(statId, t.ok ? 'ok' : 'bad', t.ok ? T('연결됨 · 저장 완료 ({ms}ms)', { ms: t.ms }) : T('연결 안 됨: {err}', { err: t.error }));
   syncKeyUi();
 }
 function syncKeyUi() {
@@ -179,7 +180,7 @@ function syncKeyUi() {
 function bindKeyInput(inputId, btnId, statId) {
   let timer = null;
   const go = () => { clearTimeout(timer); connectKey(inputId, statId); };
-  $(inputId).addEventListener('input', () => { clearTimeout(timer); keyStat(statId, 'busy', '입력 중...'); timer = setTimeout(go, 700); });
+  $(inputId).addEventListener('input', () => { clearTimeout(timer); keyStat(statId, 'busy', T('입력 중...')); timer = setTimeout(go, 700); });
   $(inputId).addEventListener('paste', () => setTimeout(go, 0));
   $(inputId).addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
   $(btnId).onclick = go;
@@ -191,7 +192,7 @@ bindKeyInput('heliusApiKey', 'btnConnect', 'keyStat');
 $('btnUnlock').onclick = async () => {
   const r = await send({ type: 'wallet:unlock', password: $('unlockPw').value });
   $('unlockPw').value = '';
-  if (r.error) return say('lMsg', r.error === 'wrong password' ? '비밀번호가 틀렸습니다' : r.error, 'bad');
+  if (r.error) return say('lMsg', r.error === 'wrong password' ? T('비밀번호가 틀렸습니다') : r.error, 'bad');
   await refresh();
 };
 $('unlockPw').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnUnlock').click(); });
@@ -207,7 +208,7 @@ async function renderHome() {
   $('addrShort').textContent = W.pubkey ? W.pubkey.slice(0, 5) + '…' + W.pubkey.slice(-5) : '';
   $('addrFull').textContent = W.pubkey || '';
   $('lockedAddr').textContent = W.pubkey || '';
-  $('lockPill').textContent = W.encrypted ? '잠금 켜짐' : '잠금 꺼짐';
+  $('lockPill').textContent = W.encrypted ? T('잠금 켜짐') : T('잠금 꺼짐');
   const hasKey = !!(C.heliusApiKey || C.customRpcUrl);
   let balErr = null;
   if (hasKey) {
@@ -217,8 +218,8 @@ async function renderHome() {
     $('bal').innerHTML = lastSol == null ? `- <small>SOL</small>` : `${lastSol.toFixed(4)} <small>SOL</small>`;
   } else $('bal').innerHTML = `- <small>SOL</small>`;
   const keyDone = hasKey && !balErr;
-  $('tdKeyText').textContent = keyDone ? 'Helius 연결됨' : hasKey ? 'Helius 연결 실패' : 'Helius 연결';
-  if (hasKey && !keyDone) { $('tdKeySub').textContent = 'API key를 확인하세요'; $('tdKeySub').className = 'bad small'; }
+  $('tdKeyText').textContent = keyDone ? T('Helius 연결됨') : hasKey ? T('Helius 연결 실패') : T('Helius 연결');
+  if (hasKey && !keyDone) { $('tdKeySub').textContent = T('API key를 확인하세요'); $('tdKeySub').className = 'bad small'; }
   else { $('tdKeySub').innerHTML = keyDone ? '' : '<a href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a>'; $('tdKeySub').className = 'small'; }
   show('tdKeyGo', !keyDone);
 
@@ -230,49 +231,49 @@ async function renderHome() {
     $('st' + id).classList.toggle('done', ok);
   }
   const n = Object.values(done).filter(Boolean).length;
-  $('todoHead').textContent = `시작 체크리스트 ${n}/3`;
+  $('todoHead').textContent = T('시작 체크리스트 {n}/3', { n });
   show('todo', n < 3);
 
   const list = await send({ type: 'watch:get' });
   let activeTab = null;
   try { [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true }); } catch (_) {}
   const w = Array.isArray(list) && (list.find((x) => activeTab && x.tabId === activeTab.id) || null);
-  const POOL = { pump: 'pump.fun', pumpswap: 'PumpSwap', meteora_dbc: 'Meteora DBC', meteora_damm_v2: 'Meteora DAMM v2', raydium_launchlab: 'Raydium LaunchLab', raydium_cpmm: 'Raydium CPMM', jupiter: 'Jupiter 경유' };
+  const POOL = { pump: 'pump.fun', pumpswap: 'PumpSwap', meteora_dbc: 'Meteora DBC', meteora_damm_v2: 'Meteora DAMM v2', raydium_launchlab: 'Raydium LaunchLab', raydium_cpmm: 'Raydium CPMM', jupiter: T('Jupiter 경유') };
   const onTokenPage = activeTab && activeTab.url && /^https:\/\/(?:[\w-]+\.)?(?:axiom\.trade\/(?:token|meme)|gmgn\.ai\/sol\/token)\//.test(activeTab.url);
   const tokState = (text, cls = '') => { $('tokState').textContent = text || ''; $('tokState').className = 'pill ' + cls; show('tokState', !!text); };
   if (!w && onTokenPage) {
-    tokState('연결 안 됨', 'warnpill');
-    $('tokBody').innerHTML = '<div class="small mut" style="margin-bottom:8px">이 탭은 Tradeasy가 설치(업데이트)되기 전에 열려서 아직 연결되지 않았습니다.</div><button class="btn sm" id="btnReloadTab">탭 새로고침</button>';
-    $('btnReloadTab').onclick = () => { chrome.tabs.reload(activeTab.id); $('tokBody').textContent = '새로고침 중...'; };
+    tokState(T('연결 안 됨'), 'warnpill');
+    $('tokBody').innerHTML = T('<div class="small mut" style="margin-bottom:8px">이 탭은 Tradeasy가 설치(업데이트)되기 전에 열려서 아직 연결되지 않았습니다.</div><button class="btn sm" id="btnReloadTab">탭 새로고침</button>');
+    $('btnReloadTab').onclick = () => { chrome.tabs.reload(activeTab.id); $('tokBody').textContent = T('새로고침 중...'); };
   } else if (!w) {
     tokState('');
-    $('tokBody').textContent = '지금 탭에서 Axiom / GMGN 토큰 페이지를 열면 여기에 표시됩니다.';
+    $('tokBody').textContent = T('지금 탭에서 Axiom / GMGN 토큰 페이지를 열면 여기에 표시됩니다.');
   } else {
     const s = hasKey ? w.state : null, m = w.meta || {};
     const unsupported = w.error && !s && /unsupported venue|only SOL-/.test(w.error);
-    tokState(!hasKey ? 'Helius 연결 필요' : s ? '' : unsupported ? '미지원' : w.error ? '오류' : '불러오는 중', !hasKey || w.error ? 'warnpill' : '');
+    tokState(!hasKey ? T('Helius 연결 필요') : s ? '' : unsupported ? T('미지원') : w.error ? T('오류') : T('불러오는 중'), !hasKey || w.error ? 'warnpill' : '');
     const title = m.name || m.symbol || short(w.mint);
     // letters underneath, image on top: a failed image simply leaves the letters visible
     const img = `<div class="tokimg">${esc((m.symbol || m.name || '?').slice(0, 2).toUpperCase())}${m.image ? `<img src="${esc(m.image)}" alt="" referrerpolicy="no-referrer">` : ''}</div>`;
     let html = `<div class="tok">${img}<div style="min-width:0;flex:1"><div class="tokhead"><span class="tokname">${esc(title)}</span>${m.symbol && m.name ? `<span class="ticker">$${esc(m.symbol)}</span>` : ''}</div>` +
       `<div class="tokaddr"><span>${esc(w.mint.slice(0, 6) + '…' + w.mint.slice(-6))}</span>${COPY_BTN(`data-copy="${esc(w.mint)}"`)}</div></div></div>`;
-    if (hasKey && unsupported) html += '<div class="small mut">Tradeasy가 아직 지원하지 않는 풀입니다 (Raydium AMM v4·CLMM, Meteora DLMM 등). 지원: pump.fun, PumpSwap, Meteora DBC·DAMM v2, Raydium LaunchLab·CPMM</div>';
+    if (hasKey && unsupported) html += T('<div class="small mut">Tradeasy가 아직 지원하지 않는 풀입니다 (Raydium AMM v4·CLMM, Meteora DLMM 등). 지원: pump.fun, PumpSwap, Meteora DBC·DAMM v2, Raydium LaunchLab·CPMM</div>');
     else if (hasKey && w.error && !s) html += `<div class="${unsupported ? 'warn' : 'bad'} small">${esc(w.friendly || w.error)}</div>`;
-    if (s) html += `<dl class="kv"><dt>보유</dt><dd>${Number(s.tokenBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}${m.symbol ? ' ' + esc(m.symbol) : ''}</dd>` +
-      `<dt>풀</dt><dd>${esc(POOL[s.venue] || s.venue)}</dd><dt>갱신</dt><dd>${ago(s.at)}</dd></dl>`;
+    if (s) html += `<dl class="kv"><dt>${T('보유')}</dt><dd>${Number(s.tokenBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}${m.symbol ? ' ' + esc(m.symbol) : ''}</dd>` +
+      `<dt>${T('풀')}</dt><dd>${esc(T(POOL[s.venue] || s.venue))}</dd><dt>${T('갱신')}</dt><dd>${ago(s.at)}</dd></dl>`;
     const P = w.position;
     if (P) {
       const sol = (n) => (n == null ? '-' : n.toFixed(4) + ' SOL');
       const cls = P.pnl == null ? '' : P.pnl >= 0 ? 'up' : 'down';
       const sign = P.pnl > 0 ? '+' : '';
-      html += `<dl class="kv pos">` + (P.avgPrice ? `<dt>평균 매수가</dt><dd>${fmtPrice(P.avgPrice)} SOL</dd>` : '') + `<dt>투입</dt><dd>${sol(P.invested)}</dd>` + (P.returned > 0 ? `<dt>회수</dt><dd>${sol(P.returned)}</dd>` : '') +
-        `<dt>지금 팔면</dt><dd>${sol(P.value)}</dd><dt>손익</dt><dd class="${cls}">${P.pnl == null ? '-' : `${sign}${P.pnl.toFixed(4)} SOL (${sign}${P.pnlPct.toFixed(1)}%)`}</dd></dl>` +
-        '<div class="dim small" style="margin-top:4px">Tradeasy 지갑 LIVE 체결 기준</div>';
+      html += `<dl class="kv pos">` + (P.avgPrice ? `<dt>${T('평균 매수가')}</dt><dd>${fmtPrice(P.avgPrice)} SOL</dd>` : '') + `<dt>${T('투입')}</dt><dd>${sol(P.invested)}</dd>` + (P.returned > 0 ? `<dt>${T('회수')}</dt><dd>${sol(P.returned)}</dd>` : '') +
+        `<dt>${T('지금 팔면')}</dt><dd>${sol(P.value)}</dd><dt>${T('손익')}</dt><dd class="${cls}">${P.pnl == null ? '-' : `${sign}${P.pnl.toFixed(4)} SOL (${sign}${P.pnlPct.toFixed(1)}%)`}</dd></dl>` +
+        T('<div class="dim small" style="margin-top:4px">Tradeasy 지갑 LIVE 체결 기준</div>');
     }
     $('tokBody').innerHTML = html;
   }
 
-  if (!anyTrade) { $('log').innerHTML = '<span class="mut small">아직 없습니다</span>'; return; }
+  if (!anyTrade) { $('log').innerHTML = T('<span class="mut small">아직 없습니다</span>'); return; }
   // one row per trade (older logs stored the confirm as a separate entry: fold it in)
   const confirms = new Map(trades.filter((x) => x.confirm && x.signature).map((x) => [x.signature, x.confirm]));
   const confirmOnly = (x) => x.confirm && trades.some((y) => y !== x && y.signature === x.signature && !y.confirm);
@@ -283,22 +284,22 @@ async function renderHome() {
     const t = new Date(x.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const link = (sig, label) => `${label}<a class="sx" target="_blank" title="Solscan" aria-label="Solscan" href="https://solscan.io/tx/${esc(sig)}">${EXT_ICON}</a>`;
     const c = x.confirm || (x.signature ? confirms.get(x.signature) : null);
-    const sym = x.symbol || '토큰';
+    const sym = x.symbol || T('토큰');
     let tag, what;
-    if (x.side === 'withdraw') { tag = '<span class="tag wd">출금</span>'; what = `${fmt(x.sol)} SOL → ${esc(short(x.to))}`; }
-    else if (x.side === 'close') { tag = '<span class="tag wd">계정 정리</span>'; what = `${x.count}개 · +${fmt(x.sol)} SOL`; }
+    if (x.side === 'withdraw') { tag = T('<span class="tag wd">출금</span>'); what = `${fmt(x.sol)} SOL → ${esc(short(x.to))}`; }
+    else if (x.side === 'close') { tag = T('<span class="tag wd">계정 정리</span>'); what = T('{n}개 · +{sol} SOL', { n: x.count, sol: fmt(x.sol) }); }
     else {
-      tag = `<span class="tag ${x.simulated ? 'sim' : 'live'}">${x.simulated ? 'SIM' : 'LIVE'}</span><span class="tag ${x.side === 'sell' ? 'sell' : 'buy'}">${x.side === 'sell' ? '매도' : '매수'}</span>`;
+      tag = `<span class="tag ${x.simulated ? 'sim' : 'live'}">${x.simulated ? 'SIM' : 'LIVE'}</span><span class="tag ${x.side === 'sell' ? 'sell' : 'buy'}">${x.side === 'sell' ? T('매도') : T('매수')}</span>`;
       const e = x.expected;
       what = !e ? '' : x.side === 'buy' ? `${e.sol} SOL → ${fmt(e.tokens)} ${esc(sym)}` : `${fmt(e.tokens)} ${esc(sym)} → ${fmt(e.sol)} SOL`;
     }
     let res;
-    if (x.side === 'close') res = link(x.signature, x.failed ? '<span class="bad">일부 실패</span>' : '<span class="ok">완료</span>');
-    else if (x.simulated) res = x.ok ? '<span class="ok">성공</span>' : '<span class="bad">실패</span>';
-    else if (c) res = link(x.signature, c.status === 'confirmed' ? '<span class="ok">체결</span>' : `<span class="bad">${c.status === 'timeout' ? '확인 안 됨' : '실패'}</span>`);
-    else res = x.signature ? link(x.signature, '<span class="dim">확인 중</span>') : '';
+    if (x.side === 'close') res = link(x.signature, x.failed ? T('<span class="bad">일부 실패</span>') : T('<span class="ok">완료</span>'));
+    else if (x.simulated) res = x.ok ? T('<span class="ok">성공</span>') : T('<span class="bad">실패</span>');
+    else if (c) res = link(x.signature, c.status === 'confirmed' ? T('<span class="ok">체결</span>') : `<span class="bad">${c.status === 'timeout' ? T('확인 안 됨') : T('실패')}</span>`);
+    else res = x.signature ? link(x.signature, T('<span class="dim">확인 중</span>')) : '';
     return `<div><span class="row" style="gap:4px;min-width:0">${tag}<span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${what}</span></span><span class="row" style="gap:6px;flex:0 0 auto"><span class="dim small">${t}</span>${res}</span></div>`;
-  }).join('') + (all.length > LOG_ROWS ? `<button class="link more" id="logMore">${logOpen ? '접기' : `더 보기 (${all.length - LOG_ROWS})`}</button>` : '');
+  }).join('') + (all.length > LOG_ROWS ? `<button class="link more" id="logMore">${logOpen ? T('접기') : T('더 보기 ({n})', { n: all.length - LOG_ROWS })}</button>` : '');
   const more = $('logMore'); if (more) more.onclick = () => { logOpen = !logOpen; renderHome(); };
 }
 
@@ -307,13 +308,13 @@ let sendMax = false, sendPlan = null;
 function sendReset() {
   sendMax = false; sendPlan = null; $('sendTo').value = ''; $('sendAmt').value = ''; say('sendMsg', '');
   show('sendForm', true); show('sendConfirm', false); show('sendDone', false);
-  $('sendAvail').textContent = lastSol == null ? '' : `· 잔고 ${lastSol.toFixed(4)} SOL`;
+  $('sendAvail').textContent = lastSol == null ? '' : T('· 잔고 {sol} SOL', { sol: lastSol.toFixed(4) });
 }
 $('btnSendOpen').onclick = () => { if (!(C.heliusApiKey || C.customRpcUrl)) { tab = 'settings'; return renderAll(); } tab = 'send'; liveAsk = false; sendReset(); renderAll(); };
 $('btnSendMax').onclick = () => { sendMax = true; $('sendAmt').value = lastSol != null ? Math.max(0, lastSol - 0.000025).toFixed(6) : ''; };
 $('sendAmt').addEventListener('input', () => { sendMax = false; });
 $('btnSendNext').onclick = async () => {
-  say('sendMsg', '확인 중...');
+  say('sendMsg', T('확인 중...'));
   const r = await send({ type: 'wallet:sendPlan', to: $('sendTo').value, sol: $('sendAmt').value, max: sendMax });
   if (r.error) return say('sendMsg', r.friendly && !/[가-힣]/.test(r.error) ? r.friendly : r.error, 'bad');
   say('sendMsg', '');
@@ -322,20 +323,20 @@ $('btnSendNext').onclick = async () => {
   $('scAmt').textContent = `${(r.lamports / 1e9).toFixed(6)} SOL`;
   $('scFee').textContent = `${(r.fee / 1e9).toFixed(6)} SOL`;
   $('scLeft').textContent = `${((r.balance - r.lamports - r.fee) / 1e9).toFixed(6)} SOL`;
-  $('scNew').textContent = r.newAccount ? '이 주소는 아직 한 번도 쓰이지 않은 새 주소입니다. 주소를 다시 확인하세요.' : '';
+  $('scNew').textContent = r.newAccount ? T('이 주소는 아직 한 번도 쓰이지 않은 새 주소입니다. 주소를 다시 확인하세요.') : '';
   show('sendForm', false); show('sendConfirm', true);
 };
 $('btnSendBack').onclick = () => { show('sendConfirm', false); show('sendForm', true); };
 $('btnSendGo').onclick = async () => {
   if (!sendPlan) return;
   show('sendConfirm', false); show('sendDone', true);
-  $('sdTitle').textContent = '전송 중...'; $('sdBody').textContent = '서명하고 보내는 중입니다. 팝업을 닫아도 전송은 계속됩니다.';
+  $('sdTitle').textContent = T('전송 중...'); $('sdBody').textContent = T('서명하고 보내는 중입니다. 팝업을 닫아도 전송은 계속됩니다.');
   const r = await send({ type: 'wallet:send', to: sendPlan.to, sol: sendPlan.sol, max: sendPlan.max });
   sendPlan = null;
-  if (r.error) { $('sdTitle').textContent = '전송 실패'; $('sdBody').innerHTML = `<span class="bad">${esc(r.friendly || r.error)}</span>`; return; }
+  if (r.error) { $('sdTitle').textContent = T('전송 실패'); $('sdBody').innerHTML = `<span class="bad">${esc(r.friendly || r.error)}</span>`; return; }
   const ok = r.confirm && r.confirm.status === 'confirmed';
-  $('sdTitle').textContent = ok ? '출금 완료' : r.confirm && r.confirm.status === 'failed' ? '전송 실패' : '전송됨 (확인 지연)';
-  $('sdBody').innerHTML = `${r.sol.toFixed(6)} SOL · <a target="_blank" href="https://solscan.io/tx/${esc(r.signature)}">Solscan에서 보기</a>`;
+  $('sdTitle').textContent = ok ? T('출금 완료') : r.confirm && r.confirm.status === 'failed' ? T('전송 실패') : T('전송됨 (확인 지연)');
+  $('sdBody').innerHTML = `${r.sol.toFixed(6)} SOL · <a target="_blank" href="https://solscan.io/tx/${esc(r.signature)}">${T('Solscan에서 보기')}</a>`;
 };
 $('sendTo').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('sendAmt').focus(); });
 $('sendAmt').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnSendNext').click(); });
@@ -351,7 +352,7 @@ function renderSettings() {
   if (!settingsOpened) {
     settingsOpened = true;
     if (C.heliusApiKey || C.customRpcUrl) connectKey('heliusApiKey', 'keyStat');
-    else keyStat('keyStat', 'bad', '연결 안 됨: API key를 입력하세요');
+    else keyStat('keyStat', 'bad', T('연결 안 됨: API key를 입력하세요'));
     scanAccounts();
   }
   show('secCard', W.exists); show('walCard', W.exists);
@@ -376,18 +377,18 @@ for (const k of FIELDS) {
 }
 $('ignoreMev').addEventListener('change', () => saveField('ignoreMev'));
 
-const pwErr = (e) => (e === 'wrong password' ? '비밀번호가 틀렸습니다' : e === 'password too short' ? '8자 이상 입력하세요' : e);
+const pwErr = (e) => (e === 'wrong password' ? T('비밀번호가 틀렸습니다') : e === 'password too short' ? T('8자 이상 입력하세요') : e);
 
 // extension lock: a toggle. Turning it on/off opens a small inline form; nothing changes until confirmed.
 let lockMode = null; // null | 'on' | 'off' | 'change'
 function renderLock() {
   const on = W.encrypted;
   $('lockToggle').checked = lockMode === 'on' ? true : lockMode === 'off' ? false : on;
-  $('secDesc').textContent = lockMode === 'on' ? '비밀번호를 정하면 켜집니다'
-    : lockMode === 'off' ? '현재 비밀번호를 입력하면 꺼집니다'
+  $('secDesc').textContent = lockMode === 'on' ? T('비밀번호를 정하면 켜집니다')
+    : lockMode === 'off' ? T('현재 비밀번호를 입력하면 꺼집니다')
     : on
-    ? (C.autoLockMin > 0 ? `켜짐 · 브라우저 재시작 또는 ${C.autoLockMin}분 미사용 시 잠김` : '켜짐 · 브라우저를 다시 열 때 잠김')
-    : '꺼짐 · 비밀번호 없이 바로 사용합니다';
+    ? (C.autoLockMin > 0 ? T('켜짐 · 브라우저 재시작 또는 {n}분 미사용 시 잠김', { n: C.autoLockMin }) : T('켜짐 · 브라우저를 다시 열 때 잠김'))
+    : T('꺼짐 · 비밀번호 없이 바로 사용합니다');
   show('lkOn', lockMode === 'on'); show('lkOff', lockMode === 'off'); show('lkChange', lockMode === 'change');
   show('lkOpts', on && !lockMode);
   show('btnLock', on && W.unlocked);
@@ -408,26 +409,26 @@ async function applyPw(oldPassword, newPassword, okText) {
 }
 $('btnLkOn').onclick = () => {
   const pw = $('nextPw').value;
-  if (pw.length < 8) return say('secMsg', '8자 이상 입력하세요', 'warn');
-  if (pw !== $('nextPw2').value) return say('secMsg', '비밀번호 확인이 일치하지 않습니다', 'warn');
-  applyPw(null, pw, '잠금을 켰습니다');
+  if (pw.length < 8) return say('secMsg', T('8자 이상 입력하세요'), 'warn');
+  if (pw !== $('nextPw2').value) return say('secMsg', T('비밀번호 확인이 일치하지 않습니다'), 'warn');
+  applyPw(null, pw, T('잠금을 켰습니다'));
 };
-$('btnLkOff').onclick = () => { if (!$('offPw').value) return say('secMsg', '현재 비밀번호를 입력하세요', 'warn'); applyPw($('offPw').value, null, '잠금을 껐습니다'); };
+$('btnLkOff').onclick = () => { if (!$('offPw').value) return say('secMsg', T('현재 비밀번호를 입력하세요'), 'warn'); applyPw($('offPw').value, null, T('잠금을 껐습니다')); };
 $('btnLkChangeDo').onclick = () => {
   const pw = $('chNew').value;
-  if (pw.length < 8) return say('secMsg', '새 비밀번호를 8자 이상 입력하세요', 'warn');
-  if (pw !== $('chNew2').value) return say('secMsg', '새 비밀번호 확인이 일치하지 않습니다', 'warn');
-  applyPw($('chCur').value, pw, '비밀번호를 바꿨습니다');
+  if (pw.length < 8) return say('secMsg', T('새 비밀번호를 8자 이상 입력하세요'), 'warn');
+  if (pw !== $('chNew2').value) return say('secMsg', T('새 비밀번호 확인이 일치하지 않습니다'), 'warn');
+  applyPw($('chCur').value, pw, T('비밀번호를 바꿨습니다'));
 };
 [['nextPw2', 'btnLkOn'], ['offPw', 'btnLkOff'], ['chNew2', 'btnLkChangeDo']].forEach(([i, b]) => $(i).addEventListener('keydown', (e) => { if (e.key === 'Enter') $(b).click(); }));
 $('btnLock').onclick = async () => { await send({ type: 'wallet:lock' }); tab = 'home'; await refresh(); };
 
 // ---------- dialog ----------
 // dialog({ title, body (html), yes, tone: 'danger'|'primary', password }) -> resolves { ok, password }; onYes may keep it open
-function dialog({ title, body, yes = '확인', tone = 'primary', password = false, onYes = null }) {
+function dialog({ title, body, yes = T('확인'), tone = 'primary', password = false, onYes = null }) {
   $('dlgTitle').textContent = title; $('dlgBody').innerHTML = body;
   $('dlgYes').textContent = yes; $('dlgYes').className = 'btn ' + (tone === 'danger' ? 'live' : 'primary');
-  $('dlgNo').textContent = '취소'; show('dlgNo', true); show('dlgYes', true);
+  $('dlgNo').textContent = T('취소'); show('dlgNo', true); show('dlgYes', true);
   show('dlgPwField', password); $('dlgPw').value = ''; say('dlgMsg', '');
   show('dlg', true); if (password) $('dlgPw').focus();
   return new Promise((resolve) => {
@@ -451,9 +452,9 @@ document.addEventListener('keydown', (e) => {
 
 // wallet: private key / delete, both behind a warning dialog (and the lock password when the lock is on)
 $('btnReveal').onclick = () => dialog({
-  title: 'private key를 표시할까요?',
-  body: '<div class="warnbox">이 key가 있으면 누구나 이 지갑의 자금을 옮길 수 있습니다. 화면 공유나 녹화 중이 아닌지 확인하세요.</div>',
-  yes: '표시', tone: 'danger', password: W.encrypted,
+  title: T('private key를 표시할까요?'),
+  body: T('<div class="warnbox">이 key가 있으면 누구나 이 지갑의 자금을 옮길 수 있습니다. 화면 공유나 녹화 중이 아닌지 확인하세요.</div>'),
+  yes: T('표시'), tone: 'danger', password: W.encrypted,
   onYes: async ({ password }) => {
     const r = await send({ type: 'wallet:reveal', password });
     if (r.error) { say('dlgMsg', pwErr(r.error), 'bad'); return true; }
@@ -462,7 +463,7 @@ $('btnReveal').onclick = () => dialog({
     $('dlgBody').innerHTML = `<div class="secretwrap"><div class="secret" id="dlgKey"></div>${COPY_BTN('data-copy-el="dlgKey"')}</div>`;
     $('dlgKey').textContent = r.secret;
     show('dlgPwField', false); show('dlgYes', false); say('dlgMsg', '');
-    $('dlgNo').textContent = '닫기';
+    $('dlgNo').textContent = T('닫기');
     const t = setTimeout(() => dlgClose && dlgClose(), 60_000);
     const prev = dlgClose; dlgClose = () => { clearTimeout(t); $('dlgBody').innerHTML = ''; prev(); };
     $('dlgNo').onclick = dlgClose;
@@ -470,9 +471,9 @@ $('btnReveal').onclick = () => dialog({
   },
 });
 $('btnRemove').onclick = () => dialog({
-  title: '지갑을 삭제할까요?',
-  body: '<div class="warnbox">private key를 백업하지 않았다면 이 지갑의 자금을 되찾을 수 없습니다.</div>',
-  yes: '삭제', tone: 'danger', password: W.encrypted,
+  title: T('지갑을 삭제할까요?'),
+  body: T('<div class="warnbox">private key를 백업하지 않았다면 이 지갑의 자금을 되찾을 수 없습니다.</div>'),
+  yes: T('삭제'), tone: 'danger', password: W.encrypted,
   onYes: async ({ password }) => {
     const r = await send({ type: 'wallet:remove', password });
     if (r.error) { say('dlgMsg', pwErr(r.error), 'bad'); return true; }
@@ -488,28 +489,28 @@ async function scanAccounts() {
   accScan = null;
   if (!W.exists || !(C.heliusApiKey || C.customRpcUrl)) { show('accCard', false); return; }
   show('accCard', true); show('accList', false); show('accActs', false);
-  $('accSum').className = 'small mut'; $('accSum').textContent = '확인 중…';
+  $('accSum').className = 'small mut'; $('accSum').textContent = T('확인 중…');
   const r = await send({ type: 'accounts:scan' });
-  if (!r || r.error) { $('accSum').textContent = (r && (r.friendly || r.error)) || '확인하지 못했습니다'; return; }
+  if (!r || r.error) { $('accSum').textContent = (r && (r.friendly || r.error)) || T('확인하지 못했습니다'); return; }
   accScan = r;
   const n = r.list.length;
   $('accSum').className = 'small';
-  $('accSum').innerHTML = n ? `${n}개 · <b>${solStr(r.lamports)} SOL</b> 회수 가능` : '<span class="mut">정리할 계정이 없습니다</span>';
+  $('accSum').innerHTML = n ? T('{n}개 · <b>{sol} SOL</b> 회수 가능', { n, sol: solStr(r.lamports) }) : T('<span class="mut">정리할 계정이 없습니다</span>');
   $('accList').innerHTML = r.list.map((a) => `<div><span>${esc(a.symbol || short(a.mint))}</span><span class="dim">${solStr(a.lamports)} SOL</span></div>`).join('');
   show('accList', n > 0); show('accActs', n > 0);
 }
 $('btnAccClose').onclick = () => {
   const r = accScan; if (!r || !r.list.length) return;
   return dialog({
-    title: `빈 토큰 계정 ${r.list.length}개를 닫을까요?`,
-    body: `<div class="small">${solStr(r.lamports)} SOL이 지갑으로 돌아옵니다.${r.fee >= r.lamports ? `<br><span class="warn">수수료(${(r.fee / 1e9).toFixed(6)} SOL)가 돌려받는 금액보다 큽니다.</span>` : ''}</div>`,
-    yes: '정리',
+    title: T('빈 토큰 계정 {n}개를 닫을까요?', { n: r.list.length }),
+    body: `<div class="small">${T('{sol} SOL이 지갑으로 돌아옵니다.', { sol: solStr(r.lamports) })}${r.fee >= r.lamports ? `<br><span class="warn">${T('수수료({fee} SOL)가 돌려받는 금액보다 큽니다.', { fee: (r.fee / 1e9).toFixed(6) })}</span>` : ''}</div>`,
+    yes: T('정리'),
     onYes: async () => {
-      $('dlgYes').disabled = true; say('dlgMsg', '처리 중…');
+      $('dlgYes').disabled = true; say('dlgMsg', T('처리 중…'));
       const x = await send({ type: 'accounts:close', accounts: r.list.map((a) => a.account) });
       $('dlgYes').disabled = false;
-      if (!x || x.error) { say('dlgMsg', (x && (x.friendly || x.error)) || '실패했습니다', 'bad'); return true; }
-      say('accMsg', x.failed ? `${x.closed}개 정리, ${x.failed}개 실패 · +${solStr(x.lamports)} SOL` : `${x.closed}개 정리 · +${solStr(x.lamports)} SOL`, x.failed ? 'warn' : 'ok');
+      if (!x || x.error) { say('dlgMsg', (x && (x.friendly || x.error)) || T('실패했습니다'), 'bad'); return true; }
+      say('accMsg', x.failed ? T('{n}개 정리, {f}개 실패 · +{sol} SOL', { n: x.closed, f: x.failed, sol: solStr(x.lamports) }) : T('{n}개 정리 · +{sol} SOL', { n: x.closed, sol: solStr(x.lamports) }), x.failed ? 'warn' : 'ok');
       scanAccounts();
       return false;
     },
@@ -527,6 +528,9 @@ async function renderAll() {
 }
 async function refresh() { await load(); await renderAll(); }
 
-renderSite();
-refresh();
+// language: 한국어 / English (settings). Static markup is translated in place; dynamic parts re-render.
+const renderLang = () => document.querySelectorAll('#langSeg button').forEach((b) => b.classList.toggle('on', b.dataset.lang === TE_I18N.lang));
+document.querySelectorAll('#langSeg button').forEach((b) => { b.onclick = () => TE_I18N.setLang(b.dataset.lang); });
+TE_I18N.onChange(() => { TE_I18N.dom(document.body); renderLang(); renderSite(); renderAll(); });
+TE_I18N.init().then(() => { TE_I18N.dom(document.body); renderLang(); renderSite(); refresh(); });
 setInterval(async () => { if (!document.hidden && tab === 'home') { await load(); renderAll(); } }, 3000);

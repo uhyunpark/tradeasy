@@ -10,6 +10,9 @@ import * as withdraw from './withdraw.js';
 import * as accounts from './accounts.js';
 import { explain } from './errors.js';
 
+globalThis.TE_I18N.init(); // UI language for error sentences (set by errors.js imports)
+
+
 // renamed storage key (v0.22): DX mode -> Tradeasy mode
 chrome.storage.local.get(['dxMode_axiom', 'teMode_axiom']).then((s) => {
   if (s.dxMode_axiom === undefined) return;

@@ -4,6 +4,8 @@
 // (never inside the terminal's React DOM).
 (() => {
   const TAG = '__TRADEASY__';
+  const T = (k, v) => globalThis.TE_I18N.T(k, v);
+  globalThis.TE_I18N.init();
   // After the extension is updated or reloaded, this script keeps running in already-open
   // tabs but can no longer talk to the background ("orphaned"). Detect that and retire.
   const timers = [];
@@ -255,7 +257,7 @@
     const ic = document.createElement('div'); ic.className = 'ic' + (kind ? '' : ' spin'); ic.innerHTML = ICONS[kind] || '';
     const body = document.createElement('div'); body.className = 'bd';
     if (html) body.innerHTML = text; else body.textContent = text;
-    const x = document.createElement('button'); x.className = 'x'; x.title = '닫기'; x.innerHTML = SVG('<path d="M18 6L6 18M6 6l12 12"/>', 2.5); x.onclick = () => t.remove();
+    const x = document.createElement('button'); x.className = 'x'; x.title = T('닫기'); x.innerHTML = SVG('<path d="M18 6L6 18M6 6l12 12"/>', 2.5); x.onclick = () => t.remove();
     t.append(ic, body, x); toasts.prepend(t);
     if (ttl) setTimeout(() => t.remove(), ttl);
     return body;
@@ -281,8 +283,8 @@
     return '0.0' + String(z).split('').map((d) => '₀₁₂₃₄₅₆₇₈₉'[d]).join('') + digits;
   };
   const fmtSol = (n) => (n == null ? '-' : n >= 1 ? n.toFixed(3) : n.toFixed(4));
-  const details = (lines) => `<details><summary>자세히</summary><pre>${esc(lines.filter(Boolean).join('\n'))}</pre></details>`;
-  const tx = (sig) => `<div class="lk"><a href="https://solscan.io/tx/${esc(sig)}" target="_blank" rel="noopener">Solscan에서 보기 ↗</a></div>`;
+  const details = (lines) => `<details><summary>${T('자세히')}</summary><pre>${esc(lines.filter(Boolean).join('\n'))}</pre></details>`;
+  const tx = (sig) => `<div class="lk"><a href="https://solscan.io/tx/${esc(sig)}" target="_blank" rel="noopener">${T('Solscan에서 보기 ↗')}</a></div>`;
   const card = (title, main, extra = '') => `<div class="t">${esc(title)}</div>${main ? `<div class="m">${esc(main)}</div>` : ''}${extra}`;
 
   // ---------- trade ----------
@@ -292,27 +294,27 @@
     busy = true; place();
     const s = readSettings(btn);
     const mint = req.mint || urlMint();
-    const sym = (metaByMint.get(mint) || {}).symbol || '토큰';
-    const label = req.side === 'buy' ? `매수 ${req.sol} SOL` : `매도 ${req.percent}%`;
-    if (!s || !s.preset || !s.preset[req.side]) { toast(card(`${label} 실패`, `${SITE} 프리셋을 찾지 못했습니다.`), 'err', true); busy = false; return; }
+    const sym = (metaByMint.get(mint) || {}).symbol || T('토큰');
+    const label = req.side === 'buy' ? T('매수 {sol} SOL', { sol: req.sol }) : T('매도 {pct}%', { pct: req.percent });
+    if (!s || !s.preset || !s.preset[req.side]) { toast(card(T('{label} 실패', { label }), T('{site} 프리셋을 찾지 못했습니다.', { site: SITE })), 'err', true); busy = false; return; }
     const full = { ...req, mint, protocol: protocolByMint.get(mint) || null, pool: poolByMint.get(mint) || null, preset: s.preset[req.side], site: SITE };
-    const pending = toast(card(modeCache === 'live' ? '전송 중' : '시뮬레이션 중', label), '', true, 0);
+    const pending = toast(card(modeCache === 'live' ? T('전송 중') : T('시뮬레이션 중'), label), '', true, 0);
     const r = await send({ type: 'trade', req: full });
     busy = false; place();
     pending.parentElement.remove();
     if (!r || r.error) {
-      toast(card(`${label} 실패`, (r && r.friendly) || (r ? r.error : 'Tradeasy 응답 없음')) + (r && r.friendly ? details([r.error]) : ''), 'err', true, 20_000);
+      toast(card(T('{label} 실패', { label }), (r && r.friendly) || (r ? r.error : T('Tradeasy 응답 없음'))) + (r && r.friendly ? details([r.error]) : ''), 'err', true, 20_000);
       return;
     }
     const x = r.result;
     const symbol = x.symbol || sym;
     const e = x.expected;
-    const what = !e ? label : req.side === 'buy' ? `매수 ${e.sol} SOL → 약 ${fmtNum(e.tokens)} ${symbol}` : `매도 ${fmtNum(e.tokens)} ${symbol} → 약 ${fmtSol(e.sol)} SOL`;
+    const what = !e ? label : req.side === 'buy' ? T('매수 {sol} SOL → 약 {tokens} {sym}', { sol: e.sol, tokens: fmtNum(e.tokens), sym: symbol }) : T('매도 {tokens} {sym} → 약 {sol} SOL', { tokens: fmtNum(e.tokens), sym: symbol, sol: fmtSol(e.sol) });
     if (x.simulated) {
-      if (x.ok) toast(card('시뮬레이션 성공', what), 'ok', true, 12_000);
-      else toast(card('시뮬레이션 실패', x.friendly || what, details(['err ' + JSON.stringify(x.err), ...(x.logs || [])])), 'err', true, 0);
+      if (x.ok) toast(card(T('시뮬레이션 성공'), what), 'ok', true, 12_000);
+      else toast(card(T('시뮬레이션 실패'), x.friendly || what, details(['err ' + JSON.stringify(x.err), ...(x.logs || [])])), 'err', true, 0);
     } else {
-      sentToasts.set(x.signature, toast(card('전송됨 · 체결 확인 중', what, tx(x.signature)), '', true, 60_000).parentElement);
+      sentToasts.set(x.signature, toast(card(T('전송됨 · 체결 확인 중'), what, tx(x.signature)), '', true, 60_000).parentElement);
     }
   }
 
@@ -322,20 +324,20 @@
     const sent = sentToasts.get(msg.signature);
     if (sent) { sent.remove(); sentToasts.delete(msg.signature); }
     const c = msg.confirm;
-    const sym = msg.symbol || (metaByMint.get(urlMint()) || {}).symbol || '토큰';
+    const sym = msg.symbol || (metaByMint.get(urlMint()) || {}).symbol || T('토큰');
     if (c.status === 'confirmed') {
       const a = c.actual;
       const main = !a ? '' : msg.side === 'buy' ? `${fmtSol(-a.sol)} SOL → ${fmtNum(a.tokens)} ${sym}` : `${fmtNum(-a.tokens)} ${sym} → ${fmtSol(a.sol)} SOL`;
       const pr = c.price;
       const priceLine = !pr ? '' : msg.side === 'buy'
-        ? `체결가 ${fmtPrice(pr.fill)} SOL` + (pr.avg && pr.buys > 1 ? ` · 평균 매수가 ${fmtPrice(pr.avg)} SOL` : '')
-        : `체결가 ${fmtPrice(pr.fill)} SOL` + (pr.avg ? ` · 평균 매수가 ${fmtPrice(pr.avg)} SOL` : '');
-      const speed = c.slots == null ? '' : c.slots === 0 ? '보낸 슬롯에서 바로 체결' : `보낸 뒤 ${c.slots}슬롯 만에 체결 (약 ${(c.slots * 0.4).toFixed(1)}초)`;
-      toast(card('체결 완료', main, (priceLine ? `<div class="sub">${priceLine}</div>` : '') + (speed ? `<div class="sub">${speed}</div>` : '') + tx(msg.signature)), 'ok', true, 15_000);
+        ? T('체결가 {p} SOL', { p: fmtPrice(pr.fill) }) + (pr.avg && pr.buys > 1 ? ' · ' + T('평균 매수가 {p} SOL', { p: fmtPrice(pr.avg) }) : '')
+        : T('체결가 {p} SOL', { p: fmtPrice(pr.fill) }) + (pr.avg ? ' · ' + T('평균 매수가 {p} SOL', { p: fmtPrice(pr.avg) }) : '');
+      const speed = c.slots == null ? '' : c.slots === 0 ? T('보낸 슬롯에서 바로 체결') : T('보낸 뒤 {n}슬롯 만에 체결 (약 {s}초)', { n: c.slots, s: (c.slots * 0.4).toFixed(1) });
+      toast(card(T('체결 완료'), main, (priceLine ? `<div class="sub">${priceLine}</div>` : '') + (speed ? `<div class="sub">${speed}</div>` : '') + tx(msg.signature)), 'ok', true, 15_000);
     } else if (c.status === 'timeout') {
-      toast(card('체결 확인 시간 초과', '45초 안에 확인되지 않았습니다.', tx(msg.signature)), 'err', true, 0);
+      toast(card(T('체결 확인 시간 초과'), T('45초 안에 확인되지 않았습니다.'), tx(msg.signature)), 'err', true, 0);
     } else {
-      toast(card('체결 실패', c.friendly || '온체인에서 실패했습니다.', tx(msg.signature) + details(['err ' + JSON.stringify(c.err), ...(c.logs || [])])), 'err', true, 0);
+      toast(card(T('체결 실패'), c.friendly || T('온체인에서 실패했습니다.'), tx(msg.signature) + details(['err ' + JSON.stringify(c.err), ...(c.logs || [])])), 'err', true, 0);
     }
   });
 
@@ -362,18 +364,18 @@
     if (!pop) return;
     const mode = info && info.mode === 'live' ? 'live' : 'sim';
     const st = info && info.state;
-    const sym = (metaByMint.get(mint) || {}).symbol || '토큰';
-    const head = `<h4><span>Tradeasy ${side === 'buy' ? '매수' : '매도'}<span class="te-tag ${mode}">${mode === 'live' ? 'LIVE' : '시뮬레이션'}</span></span><span class="mut" data-x style="cursor:pointer">닫기</span></h4>`;
+    const sym = (metaByMint.get(mint) || {}).symbol || T('토큰');
+    const head = `<h4><span>Tradeasy ${side === 'buy' ? T('매수') : T('매도')}<span class="te-tag ${mode}">${mode === 'live' ? 'LIVE' : T('시뮬레이션')}</span></span><span class="mut" data-x style="cursor:pointer">${T('닫기')}</span></h4>`;
     let status = '';
-    if (!info || (info.error && !info.wallet)) status = 'Tradeasy에 연결할 수 없습니다. 탭을 새로고침하세요.';
-    else if (!info.wallet.exists) status = 'Tradeasy 지갑이 없습니다. Tradeasy 팝업에서 만드세요.';
-    else if (!info.wallet.unlocked) status = '지갑이 잠겨 있습니다. Tradeasy 팝업에서 잠금을 해제하세요.';
+    if (!info || (info.error && !info.wallet)) status = T('Tradeasy에 연결할 수 없습니다. 탭을 새로고침하세요.');
+    else if (!info.wallet.exists) status = T('Tradeasy 지갑이 없습니다. Tradeasy 팝업에서 만드세요.');
+    else if (!info.wallet.unlocked) status = T('지갑이 잠겨 있습니다. Tradeasy 팝업에서 잠금을 해제하세요.');
     else if (info.error) status = info.friendly || info.error;
-    else if (!st) status = '토큰 정보를 불러오는 중...';
+    else if (!st) status = T('토큰 정보를 불러오는 중...');
     const preset = s && s.preset ? s.preset[side] : null;
     const v = (x, unit = '') => (x == null ? 'auto' : x + unit);
-    const presetLine = preset ? `${esc(s.label)} · slippage ${esc(v(preset.slippage, '%'))} · priority ${esc(v(preset.priorityFeeSol))} · tip ${esc(v(preset.bribeFeeSol))}${preset.mevProtection ? ' · MEV 보호' : ''}` : '프리셋을 찾지 못했습니다';
-    const stLine = st ? `Tradeasy 지갑 ${st.solBalance.toFixed(4)} SOL · 보유 ${fmtNum(Number(st.tokenBalance))} ${esc(sym)}` : '';
+    const presetLine = preset ? `${esc(s.label)} · slippage ${esc(v(preset.slippage, '%'))} · priority ${esc(v(preset.priorityFeeSol))} · tip ${esc(v(preset.bribeFeeSol))}${preset.mevProtection ? ' · ' + T('MEV 보호') : ''}` : T('프리셋을 찾지 못했습니다');
+    const stLine = st ? T('Tradeasy 지갑 {sol} SOL · 보유 {tokens} {sym}', { sol: st.solBalance.toFixed(4), tokens: fmtNum(Number(st.tokenBalance)), sym: esc(sym) }) : '';
     let body = `<div class="mut">${presetLine}</div><div class="mut">${stLine}</div>` + (status ? `<div class="warn">${esc(status)}</div>` : '');
     const disabled = status ? 'disabled' : '';
     const sols = [], pcts = [];
@@ -382,18 +384,18 @@
       const amt = inp ? num(inp.value) : null;
       const solUnit = !s || s.buyUnitIsSol;
       body += '<div class="grid">';
-      if (solUnit && amt) { body += `<button class="main" data-sol="${amt}" ${disabled}><b>${amt} SOL 매수 (입력값)</b><small data-pv></small></button>`; sols.push(amt); }
+      if (solUnit && amt) { body += `<button class="main" data-sol="${amt}" ${disabled}><b>${T('{amt} SOL 매수 (입력값)', { amt })}</b><small data-pv></small></button>`; sols.push(amt); }
       for (const q of (s ? s.solQuickSets : [])) { body += `<button data-sol="${q}" ${disabled}><b>${q} SOL</b><small data-pv></small></button>`; sols.push(q); }
       body += '</div>';
-      if (!solUnit) body += '<div class="mut">터미널 금액 단위가 SOL이 아니라 빠른 금액 버튼만 씁니다</div>';
+      if (!solUnit) body += T('<div class="mut">터미널 금액 단위가 SOL이 아니라 빠른 금액 버튼만 씁니다</div>');
     } else {
       const none = st && st.tokenBalanceRaw === '0';
       body += '<div class="grid">';
       for (const p of (s ? s.percentageQuickSets : [25, 50, 100])) { body += `<button class="sell" data-pct="${p}" ${disabled || (none ? 'disabled' : '')}><b>${p}%</b><small data-pv></small></button>`; pcts.push(p); }
       body += '</div>';
-      if (none) body += '<div class="mut">Tradeasy 지갑에 이 토큰이 없습니다</div>';
+      if (none) body += T('<div class="mut">Tradeasy 지갑에 이 토큰이 없습니다</div>');
     }
-    if (!status) body += `<div class="mut" style="margin-top:6px">버튼 아래: 예상 수령량${side === 'buy' ? ` (${esc(sym)})` : ''} · 가격 영향</div>`;
+    if (!status) body += `<div class="mut" style="margin-top:6px">${side === 'buy' ? T('버튼 아래: 예상 수령량 ({sym}) · 가격 영향', { sym: esc(sym) }) : T('버튼 아래: 예상 수령량 · 가격 영향')}</div>`;
     pop.innerHTML = head + body;
     pop.querySelector('[data-x]').addEventListener('click', closePop);
     pop.querySelectorAll('button[data-sol],button[data-pct]').forEach((b) => b.addEventListener('click', (e) => {
@@ -412,7 +414,7 @@
       q.items.forEach((it, i) => {
         const el = btns[i] && btns[i].querySelector('[data-pv]');
         if (!el) return;
-        if (it.error) { el.textContent = /liquid|insufficient/i.test(it.error) ? '유동성 부족' : '견적 불가'; return; }
+        if (it.error) { el.textContent = /liquid|insufficient/i.test(it.error) ? T('유동성 부족') : T('견적 불가'); return; }
         el.innerHTML = (side === 'buy' ? `≈ ${fmtNum(it.out)}` : `≈ ${fmtSol(it.out)} SOL`) + impactHtml(it.impact);
       });
     }
@@ -430,7 +432,7 @@
     teMode = on;
     try { chrome.storage.local.set({ [MODE_KEY]: on }); } catch (_) {}
     place();
-    toast(card(on ? 'Tradeasy 모드 켜짐' : 'Tradeasy 모드 꺼짐', on ? `${A.name} 버튼을 누르면 Tradeasy가 체결합니다` : '터미널이 직접 체결합니다'), on ? 'ok' : 'err', true, 4000);
+    toast(card(on ? T('Tradeasy 모드 켜짐') : T('Tradeasy 모드 꺼짐'), on ? T('{site} 버튼을 누르면 Tradeasy가 체결합니다', { site: A.name }) : T('터미널이 직접 체결합니다')), on ? 'ok' : 'err', true, 4000);
   }
   const NUM_RE = /^[\d.,]+%?$/;
   function panelOf(btn) {
@@ -480,7 +482,7 @@
     });
     el.removeAttribute('data-te-q');
     if (info && new RegExp(`^${B58}$`).test(info.mint || '')) {
-      if (info.quote && info.quote !== 'So11111111111111111111111111111111111111112') throw new Error('SOL로 거래되는 토큰만 지원합니다');
+      if (info.quote && info.quote !== 'So11111111111111111111111111111111111111112') throw new Error(T('SOL로 거래되는 토큰만 지원합니다'));
       if (info.protocol) protocolByMint.set(info.mint, info.protocol);
       if (info.pool && new RegExp(`^${B58}$`).test(info.pool)) poolByMint.set(info.mint, info.pool);
       return info.mint;
@@ -497,11 +499,11 @@
     if (pctHint) return Math.min(100, value);
     const r = await send({ type: 'state', mint }); // token amount -> % of the Tradeasy balance
     const bal = r && r.state ? Number(r.state.tokenBalance) : 0;
-    if (!(bal > 0)) throw new Error('Tradeasy 지갑에 이 토큰이 없습니다');
+    if (!(bal > 0)) throw new Error(T('Tradeasy 지갑에 이 토큰이 없습니다'));
     return Math.min(100, (value / bal) * 100);
   }
   async function handle(c) {
-    const fail = (m) => toast(card('Tradeasy 모드', m), 'err', true, 8000);
+    const fail = (m) => toast(card(T('Tradeasy 모드'), m), 'err', true, 8000);
     try {
       if (c.kind === 'chip') {
         fillInput(c.panel.input, c.value);
@@ -511,10 +513,10 @@
       if (c.kind === 'main') {
         const p = panelOf(c.el);
         const value = p && num(p.input.value);
-        if (!value) return fail('금액을 입력하세요');
+        if (!value) return fail(T('금액을 입력하세요'));
         if (c.side === 'buy') {
           const s = readSettings(c.el);
-          if (s && !s.buyUnitIsSol) return fail(`${A.name} 매수 금액이 ${s.buyUnit.toUpperCase()} 단위입니다. 금액 옆 단위를 SOL로 바꿔주세요`);
+          if (s && !s.buyUnitIsSol) return fail(T('{site} 매수 금액이 {unit} 단위입니다. 금액 옆 단위를 SOL로 바꿔주세요', { site: A.name, unit: s.buyUnit.toUpperCase() }));
           return doTrade({ side: 'buy', sol: value }, c.el);
         }
         const pct = (pendingPct && pendingPct.v === value) || isPctInput(p.input);
@@ -524,7 +526,7 @@
         // the page's own token only for one-click buttons inside this page's trade panel
         const inPanel = [...tracked.keys()].some((b) => { const p = b.isConnected && panelOf(b); return p && p.el.contains(c.el); });
         const mint = (await rowToken(c.el)) || (inPanel ? urlMint() : null);
-        if (!mint || !c.value) return fail(`이 버튼의 토큰을 알 수 없어 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 거래됩니다`);
+        if (!mint || !c.value) return fail(T('이 버튼의 토큰을 알 수 없어 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 거래됩니다'));
         if (c.side === 'buy') return doTrade({ side: 'buy', sol: c.value, mint }, null);
         return doTrade({ side: 'sell', percent: await sellPercent(mint, c.value, c.pct), mint }, null);
       }
@@ -539,7 +541,7 @@
       if (!c) return;
       e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
       // extension was updated under this tab: keep blocking terminal trades (no silent fee trade), ask for a refresh
-      if (dead) { if (e.type === 'pointerdown' && e.isTrusted) toast('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.', 'err', false, 8000); return; }
+      if (dead) { if (e.type === 'pointerdown' && e.isTrusted) toast(T('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.'), 'err', false, 8000); return; }
       // act once per press, on pointerdown (that is when the terminal itself would trade)
       if (e.type !== 'pointerdown' || e.button !== 0 || !e.isTrusted) return;
       if (!actOnce(c.el)) return;
@@ -570,7 +572,7 @@
     cv.addEventListener('pointerdown', (e) => {
       swallow(e);
       if (!e.isTrusted || e.button !== 0 || busy) return;
-      if (dead) return toast('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.', 'err', false, 8000);
+      if (dead) return toast(T('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.'), 'err', false, 8000);
       if (!actOnce(btn)) return;
       const side = sideOf(btn);
       if (side) handle({ kind: 'main', el: btn, side });
@@ -581,7 +583,7 @@
   function makeBadge(btn) {
     const b = document.createElement('span'); b.className = 'te-badge';
     if (INTERCEPT) { b.classList.add('tg'); b.innerHTML = '<span>Tradeasy</span><span class="sw"></span>'; } // a small switch: Tradeasy mode on/off
-    else { b.textContent = 'Tradeasy'; b.title = 'Tradeasy로 거래'; }
+    else { b.textContent = 'Tradeasy'; b.title = T('Tradeasy로 거래'); }
     const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
     ['pointerdown', 'mousedown', 'mouseup'].forEach((t) => b.addEventListener(t, stop, true));
     b.addEventListener('click', (e) => {
@@ -611,7 +613,7 @@
       if (INTERCEPT) {
         badge.classList.toggle('off', !teMode);
         badge.setAttribute('role', 'switch'); badge.setAttribute('aria-checked', String(teMode));
-        badge.title = teMode ? `Tradeasy 모드: 이 버튼은 Tradeasy가 체결합니다 (누르면 끄기)` : 'Tradeasy 모드 꺼짐: 터미널이 체결합니다 (누르면 켜기)';
+        badge.title = teMode ? T('Tradeasy 모드: 이 버튼은 Tradeasy가 체결합니다 (누르면 끄기)') : T('Tradeasy 모드 꺼짐: 터미널이 체결합니다 (누르면 켜기)');
         let cv = covers.get(btn);
         if (!cv) { cv = makeCover(btn); getLayer().appendChild(cv); covers.set(btn, cv); }
         cv.style.display = visible && teMode ? 'flex' : 'none';
@@ -645,7 +647,7 @@
     if (!mint || dead) return;
     const r = await send({ type: 'avgline', mint });
     const line = r && r.line;
-    window.postMessage({ [TAG]: true, kind: 'avg-line', payload: line ? { mint, avg: line.avg, spot: line.spot, label: 'Tradeasy 평균 매수' } : { mint } }, location.origin);
+    window.postMessage({ [TAG]: true, kind: 'avg-line', payload: line ? { mint, avg: line.avg, spot: line.spot, label: T('Tradeasy 평균 매수') } : { mint } }, location.origin);
   }, 3_000);
   const pollMode = async () => { const r = await send({ type: 'state', mint: urlMint() }); if (r && r.mode) { modeCache = r.mode === 'live' ? 'live' : 'sim'; place(); } };
   every(pollMode, 5_000); pollMode();
@@ -666,7 +668,7 @@
     window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place);
     document.querySelectorAll('#te-layer .te-badge, #te-layer .te-pop').forEach((x) => x.remove());
     // covers stay (and keep swallowing presses) so a stale tab never lets a terminal trade through
-    toast('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하면 Tradeasy 버튼이 다시 동작합니다.', 'err', false, 0);
+    toast(T('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하면 Tradeasy 버튼이 다시 동작합니다.'), 'err', false, 0);
   };
   every(() => { if (!alive()) retire(); }, 2000);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

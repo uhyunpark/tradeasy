@@ -1,3 +1,8 @@
+import '../i18n-en.js';
+import '../i18n.js';
+
+const T = (k, v) => globalThis.TE_I18N.T(k, v);
+
 export const DEFAULTS = {
   heliusApiKey: '',      // one Helius key: RPC (prefetch/simulate/confirm) + Sender (50 req/s instead of 1)
   customRpcUrl: '',      // optional override for the RPC only
@@ -53,19 +58,19 @@ export async function setConfig(patch) {
 // checks that the configured RPC (Helius key) answers. Returns { ok, ms, slot } or { ok:false, error }.
 export async function testRpc() {
   const cfg = await getConfig();
-  if (!cfg.rpcUrl) return { ok: false, error: 'API key를 입력하세요' };
+  if (!cfg.rpcUrl) return { ok: false, error: T('API key를 입력하세요') };
   const t0 = Date.now();
   let res;
   try {
     res = await fetch(cfg.rpcUrl, { method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSlot', params: [{ commitment: 'processed' }] }), signal: AbortSignal.timeout(8000) });
   } catch (e) {
-    return { ok: false, error: '응답이 없습니다 (네트워크 확인)' };
+    return { ok: false, error: T('응답이 없습니다 (네트워크 확인)') };
   }
-  if (res.status === 401 || res.status === 403) return { ok: false, error: 'API key가 올바르지 않습니다' };
-  if (res.status === 429) return { ok: false, error: '요청 한도 초과 (잠시 후 다시)' };
-  if (!res.ok) return { ok: false, error: `RPC 오류 HTTP ${res.status}` };
+  if (res.status === 401 || res.status === 403) return { ok: false, error: T('API key가 올바르지 않습니다') };
+  if (res.status === 429) return { ok: false, error: T('요청 한도 초과 (잠시 후 다시)') };
+  if (!res.ok) return { ok: false, error: T('RPC 오류 HTTP {status}', { status: res.status }) };
   let j = null; try { j = await res.json(); } catch (_) {}
-  if (!j || typeof j.result !== 'number') return { ok: false, error: (j && j.error && j.error.message) || 'RPC 응답 형식 오류' };
+  if (!j || typeof j.result !== 'number') return { ok: false, error: (j && j.error && j.error.message) || T('RPC 응답 형식 오류') };
   return { ok: true, ms: Date.now() - t0, slot: j.result };
 }

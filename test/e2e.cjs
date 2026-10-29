@@ -116,6 +116,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
 
   let [sw] = ctx.serviceWorkers();
   if (!sw) sw = await ctx.waitForEvent('serviceworker');
+  await sw.evaluate((l) => chrome.storage.local.set({ lang: l }), process.env.UI_LANG || 'ko');
   const swErrors = [];
   sw.on('console', (m) => { if (m.type() === 'error') swErrors.push(m.text()); });
   const extId = sw.url().split('/')[2];
@@ -161,7 +162,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await pop.click('#btnGear');
   await pop.waitForSelector('#keyStat.ok', { timeout: 10000 });
   const hlinkHiddenWhenConnected = await pop.isHidden('#vSettings .hlink');
-  await pop.waitForFunction(() => /회수 가능|없습니다|못했/.test(document.querySelector('#accSum').textContent), null, { timeout: 10000 });
+  await pop.waitForFunction(() => /회수 가능|없습니다|못했|reclaim|Nothing|Could not/.test(document.querySelector('#accSum').textContent), null, { timeout: 10000 });
   const accBefore = (await pop.innerText('#accCard')).replace(/\s+/g, ' ');
   await pop.screenshot({ path: path.join(OUT, 'popup-5-settings.png'), fullPage: true });
   await pop.click('#btnAccClose');
@@ -288,7 +289,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   const sendConfirmText = (await pop.innerText('#sendConfirm')).replace(/\s+/g, ' ');
   await pop.screenshot({ path: path.join(OUT, 'popup-7-send-confirm.png') });
   await pop.click('#btnSendGo');
-  await pop.waitForFunction(() => !/전송 중/.test(document.querySelector('#sdTitle').textContent), null, { timeout: 15000 });
+  await pop.waitForFunction(() => !/전송 중|Sending/.test(document.querySelector('#sdTitle').textContent), null, { timeout: 15000 });
   const sendDone = (await pop.innerText('#sendDone')).replace(/\s+/g, ' ');
   // bad address
   await pop.click('#btnSendClose'); await pop.click('#btnSendOpen'); await pop.fill('#sendTo', 'notanaddress'); await pop.fill('#sendAmt', '0.1'); await pop.click('#btnSendNext');
@@ -317,7 +318,15 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
     return { rows, icons, more, rowsOpen: document.querySelectorAll('#log > div').length, first: document.querySelector('#log > div').innerText.replace(/\s+/g, ' ') };
   });
   await pop.screenshot({ path: path.join(OUT, 'popup-6b-log.png'), fullPage: true });
-  console.log(JSON.stringify({ logTest, accounts, hlinkHiddenWhenConnected, teMode, withdraw, lockTest, tokCard, tokCardOrphan, rpcAtClick, backupKeyLen, cfgAfter, pubkey, sMsg, frames, popText, toastText, axiomClicks, simTxLen: simTx && simTx.length, senderHit,
+  const langSwitch = await pop.evaluate(async () => {
+    const before = TE_I18N.lang;
+    await TE_I18N.setLang(before === 'en' ? 'ko' : 'en'); await new Promise((r) => setTimeout(r, 400));
+    const r = { before, after: TE_I18N.lang, settingsTitle: document.querySelector('#vSettings .ttl').textContent, todo: document.querySelector('#todoHead') && document.querySelector('#todoHead').textContent };
+    await TE_I18N.setLang(before); await new Promise((r2) => setTimeout(r2, 400));
+    r.back = document.querySelector('#vSettings .ttl').textContent;
+    return r;
+  });
+  console.log(JSON.stringify({ langSwitch, logTest, accounts, hlinkHiddenWhenConnected, teMode, withdraw, lockTest, tokCard, tokCardOrphan, rpcAtClick, backupKeyLen, cfgAfter, pubkey, sMsg, frames, popText, toastText, axiomClicks, simTxLen: simTx && simTx.length, senderHit,
     syntheticOpenedPopover: popAfterSynthetic, senderUrl, senderCount, senderParams: senderBody && senderBody.params[1], confirmToast, rpcCalls, swErrors, popErrors, pageErrors }, null, 2));
   if (process.env.ORPHAN) {
     await page.keyboard.press('Escape');

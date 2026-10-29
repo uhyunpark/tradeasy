@@ -25,6 +25,7 @@
   .seg button { border:0; background:none; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; color:var(--mut); }
   .seg button.on.sim { background:var(--sim); color:#fff; }
   .seg button.on.live { background:var(--live); color:#fff; }
+  .seg button.on.lang { background:var(--panel2); color:#e2e6ee; }
 
   .hright { display:flex; align-items:center; gap:8px; }
   .icon { width:28px; height:28px; display:grid; place-items:center; border:0; background:transparent; border-radius:8px; color:var(--mut); padding:0; }
@@ -348,6 +349,9 @@
 </main>
 
 <main id="vSettings" class="hidden">
+  <div class="card">
+    <div class="trow"><div class="ttl">언어</div><div class="seg" id="langSeg"><button class="lang" data-lang="ko">한국어</button><button class="lang" data-lang="en">English</button></div></div>
+  </div>
   <div class="card stack">
     <h3>Helius 연결</h3>
     <div class="field"><label class="lrow">Helius API key <a class="hlink" href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a></label>
@@ -435,6 +439,8 @@
 </main>
 
 
+<script src="i18n-en.js"></script>
+<script src="i18n.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>
