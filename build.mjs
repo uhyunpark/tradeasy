@@ -27,7 +27,7 @@ for (const f of ['hook.js', 'content.js', 'popup.html', 'popup.js']) copyFileSyn
 writeFileSync(`${out}/manifest.json`, JSON.stringify({
   manifest_version: 3,
   name: 'DX Trader (dev)',
-  version: '0.20.1',
+  version: '0.21.0',
   description: 'Trade pump.fun, PumpSwap, Meteora DBC/DAMM v2 and Raydium LaunchLab/CPMM from Axiom / GMGN with your own wallet via Helius Sender.',
   permissions: ['storage', 'activeTab', 'favicon'],
   host_permissions: ['https://axiom.trade/*', 'https://gmgn.ai/*', 'https://*.helius-rpc.com/*'],

@@ -70,7 +70,7 @@ Detection order in `market.refresh`:
 2. A protocol hint naming Raydium/LaunchLab without a pool → LaunchLab PDA `["pool", mintA, WSOL]`.
 3. pump.fun bonding curve from the mint, then PumpSwap (hinted pool, then canonical pool; reversed pools with base = WSOL are supported).
 
-SOL-quoted only. pump.fun also has non-SOL quote curves (e.g. PUMP-quoted): rejected with the quote mint in the error. The SDK's `multiHopSwapInstructions` is the likely path if this is added. Not supported: Raydium AMM v4 (incl. LaunchLab coins that graduate there), CLMM, Meteora DLMM.
+SOL-quoted only. pump.fun also has non-SOL quote curves (e.g. PUMP-quoted): rejected with the quote mint in the error. Axiom trades these in one tx through its own router program (`FLASHX…`), e.g. PumpSwap token→HYPE then Orca Whirlpool HYPE→SOL. The SDK's `multiHopSwapInstructions` is the likely path if this is added. Not supported: Raydium AMM v4 (incl. LaunchLab coins that graduate there), CLMM, Meteora DLMM.
 
 ## Terminal data sources
 
@@ -120,6 +120,6 @@ Release: bump the version in `build.mjs` and `package.json`, build, run both e2e
   - LaunchLab status: 0 trading, 1 complete (migration pending), 2 migrated.
   - CPMM reserves = vault balance − protocol/fund/creator fees. The creator fee applies only if `enableCreatorFee`, on the input side per `feeOn` (0 both, 1 token0, 2 token1).
 - **Slippage errors:** pump `TooMuchSolRequired`/`TooLittleSolReceived`; exact-in buys `BuySlippageBelowMin*`; PumpSwap `ExceededSlippage`.
-- **Sender:** `skipPreflight`, `maxRetries: 0`, a single send. Free plan: Sender 50 req/s and 0 credits; RPC 10 req/s and 1M credits/month (page watching dominates usage).
+- **Sender:** `skipPreflight`, `maxRetries: 0`; the same signed tx is re-sent every 300 ms up to 3 times (~1 s) until its signature is seen (`trade.js` `rebroadcast`). Same signature, so it lands at most once; min-out still bounds the price. Free plan: Sender 50 req/s and 0 credits; RPC 10 req/s and 1M credits/month (page watching dominates usage).
 - **Orphaned tabs:** after reloading the extension, open terminal tabs are orphaned until refreshed (content shows a toast; the popup offers a tab refresh).
 - **Wallet sharing:** DX and the user's Axiom wallet can be the same key, so Axiom's UI also shows DX trades.

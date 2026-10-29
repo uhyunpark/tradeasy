@@ -111,8 +111,8 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
     };
     r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(Array.isArray(req) ? req.map(one) : one(req)) });
   });
-  let senderUrl = null, senderBody = null;
-  await ctx.route('https://sender.helius-rpc.com/**', (r) => { senderHit = true; senderUrl = r.request().url(); senderBody = JSON.parse(r.request().postData()); r.fulfill({ contentType: 'application/json', body: '{"jsonrpc":"2.0","id":1,"result":"SIG"}' }); });
+  let senderUrl = null, senderBody = null, senderCount = 0;
+  await ctx.route('https://sender.helius-rpc.com/**', (r) => { senderHit = true; senderCount++; senderUrl = r.request().url(); senderBody = JSON.parse(r.request().postData()); r.fulfill({ contentType: 'application/json', body: '{"jsonrpc":"2.0","id":1,"result":"SIG"}' }); });
 
   let [sw] = ctx.serviceWorkers();
   if (!sw) sw = await ctx.waitForEvent('serviceworker');
@@ -318,7 +318,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   });
   await pop.screenshot({ path: path.join(OUT, 'popup-6b-log.png'), fullPage: true });
   console.log(JSON.stringify({ logTest, accounts, hlinkHiddenWhenConnected, dxMode, withdraw, lockTest, tokCard, tokCardOrphan, rpcAtClick, backupKeyLen, cfgAfter, pubkey, sMsg, frames, popText, toastText, axiomClicks, simTxLen: simTx && simTx.length, senderHit,
-    syntheticOpenedPopover: popAfterSynthetic, senderUrl, senderParams: senderBody && senderBody.params[1], confirmToast, rpcCalls, swErrors, popErrors, pageErrors }, null, 2));
+    syntheticOpenedPopover: popAfterSynthetic, senderUrl, senderCount, senderParams: senderBody && senderBody.params[1], confirmToast, rpcCalls, swErrors, popErrors, pageErrors }, null, 2));
   if (process.env.ORPHAN) {
     await page.keyboard.press('Escape');
     const badgesBefore = await page.evaluate(() => document.querySelectorAll('#dx-layer .dx-badge').length);

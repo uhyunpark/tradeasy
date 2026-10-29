@@ -291,19 +291,32 @@ export async function execute(req) {
   if (cfg.heliusApiKey) q.push('api-key=' + encodeURIComponent(cfg.heliusApiKey)); // same Helius key: 50 req/s instead of 1
   const url = SENDER_URL + (q.length ? '?' + q.join('&') : '');
   const b64 = btoa(String.fromCharCode(...tx.serialize()));
-  const r = await fetch(url, {
-    method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method: 'sendTransaction', params: [b64, { encoding: 'base64', skipPreflight: true, maxRetries: 0 }] }),
-  });
+  const body = JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method: 'sendTransaction', params: [b64, { encoding: 'base64', skipPreflight: true, maxRetries: 0 }] });
+  const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
   const j = await r.json().catch(() => ({}));
   if (j.error) throw new Error('Sender: ' + (j.error.message || JSON.stringify(j.error)));
   const signature = j.result;
+  rebroadcast(url, body, signature);
   return { ...base, simulated: false, signature, timing: { ...base.timing, sendMs: Date.now() - tBuilt } };
+}
+
+// Re-send the same signed tx a few times within ~1 s in case a packet was dropped. Same signature, so it can
+// land at most once, and the min-out in the tx still bounds the price. Stops as soon as the tx is seen.
+const REBROADCAST_MS = 300, REBROADCAST_TIMES = 3;
+const seen = new Set(); // signatures seen on-chain (any status) or in the terminal feed
+function rebroadcast(url, body, signature) {
+  let n = 0;
+  const tick = () => {
+    if (seen.has(signature) || ++n > REBROADCAST_TIMES) return;
+    fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body }).catch(() => {});
+    setTimeout(tick, REBROADCAST_MS);
+  };
+  setTimeout(tick, REBROADCAST_MS);
 }
 
 // Poll for confirmation (feed detection can resolve earlier via resolveFromFeed).
 const waiters = new Map();
-export function resolveFromFeed(sig) { const w = waiters.get(sig); if (w) w('feed'); }
+export function resolveFromFeed(sig) { seen.add(sig); const w = waiters.get(sig); if (w) w('feed'); }
 export async function confirm(signature, timeoutMs = 45_000) {
   const c = await market.connection();
   const start = Date.now();
@@ -313,10 +326,11 @@ export async function confirm(signature, timeoutMs = 45_000) {
     while (Date.now() - start < timeoutMs) {
       const { value } = await c.getSignatureStatuses([signature]);
       const s = value && value[0];
+      if (s) seen.add(signature);
       if (s && s.err) return { status: 'failed', err: s.err, ms: Date.now() - start };
       if (s && (s.confirmationStatus === 'confirmed' || s.confirmationStatus === 'finalized')) return { status: 'confirmed', ms: Date.now() - start, viaFeed, slot: s.slot };
       await Promise.race([feed, new Promise((r) => setTimeout(r, 800))]);
     }
     return { status: 'timeout', ms: Date.now() - start };
-  } finally { waiters.delete(signature); }
+  } finally { waiters.delete(signature); setTimeout(() => seen.delete(signature), 5_000); }
 }

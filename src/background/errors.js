@@ -2,7 +2,8 @@
 import * as tokenMeta from './meta.js';
 
 const QUOTES = { pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn: 'PUMP', EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
-  Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT', USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB: 'USD1' };
+  Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT', USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB: 'USD1',
+  '98sMhvDwXj1RQi5c5Mndm3vPe9cBqPrbLaufMXFNMh5g': 'HYPE' };
 const RULES = [
   [/only SOL-(?:quoted|paired)[^(]*\(quote (\w+)\)/i, (m) => {
     const meta = tokenMeta.get(m[1]);
