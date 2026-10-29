@@ -259,7 +259,6 @@
     "보내기": "Send",
     "수정": "Edit",
     "홈으로": "Home",
-    "언어": "Language",
     "한국어": "한국어",
     "한": "한",
     "거래 설정": "Trading",
@@ -300,5 +299,11 @@
     "잠금 비밀번호": "Lock password",
     "받을 지갑 또는 거래소 SOL 입금 주소": "Recipient wallet or exchange SOL deposit address",
     "비우면 키 없이 사용": "Empty: no key",
+    "처음으로 돌아갈까요?": "Start over?",
+    "<div class=\"warnbox\">방금 만든 지갑을 지웁니다. 백업한 key가 있다면 나중에 가져오기로 다시 쓸 수 있습니다.</div>": "<div class=\"warnbox\">This removes the wallet you just created. If you backed up its key, you can import it again later.</div>",
+    "<div class=\"small\">가져온 지갑을 이 확장프로그램에서 지웁니다. 지갑 자체는 그대로입니다.</div>": "<div class=\"small\">This removes the imported wallet from the extension. The wallet itself is not affected.</div>",
+    "처음으로": "Start over",
+    "지우지 않았습니다": "Not removed",
+    "이 지갑에 SOL이 있어 지우지 않았습니다. 설정을 마친 뒤 출금하세요.": "This wallet holds SOL, so it was not removed. Finish setup and withdraw it first.",
   };
 })(globalThis);

@@ -1,6 +1,6 @@
 {
   "name": "tradeasy",
-  "version": "0.23.1",
+  "version": "0.23.2",
   "description": "Chrome MV3 extension: trade from Axiom/GMGN with your own hot wallet via Helius Sender",
   "scripts": {
     "build": "node build.mjs",

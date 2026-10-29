@@ -181,7 +181,7 @@
 </head>
 <body>
 <header>
-  <div class="htitle" id="hHome"><div class="logo">T</div>Tradeasy</div>
+  <div class="htitle" id="hHome"><button class="icon hidden" id="btnObBack" title="뒤로" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="logo">T</div>Tradeasy</div>
   <div class="htitle hidden" id="hSettings">
     <button class="icon" id="btnBack" title="뒤로" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><span id="hTitle">설정</span>
   </div>
@@ -350,9 +350,6 @@
 </main>
 
 <main id="vSettings" class="hidden">
-  <div class="card">
-    <div class="trow"><div class="ttl">언어</div><div class="seg" id="langSeg"><button class="lang" data-lang="ko">한국어</button><button class="lang" data-lang="en">English</button></div></div>
-  </div>
   <div class="card stack">
     <h3>Helius 연결</h3>
     <div class="field"><label class="lrow">Helius API key <a class="hlink" href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a></label>
@@ -435,6 +432,9 @@
     <div class="addrchip full"><span class="mono" id="walAddr"></span><button class="cp" title="복사" aria-label="복사" data-copy-el="walAddr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
     <div class="row" style="justify-content:flex-end"><button class="btn sm" id="btnReveal">private key 보기</button><button class="btn sm danger" id="btnRemove">지갑 삭제</button></div>
     <div class="msg" id="walMsg"></div>
+  </div>
+  <div class="card">
+    <div class="trow"><div class="ttl" id="langTitle">Language</div><div class="seg" id="langSeg"><button class="lang" data-lang="ko">한국어</button><button class="lang" data-lang="en">English</button></div></div>
   </div>
   <div class="foot">지원 사이트: Axiom · GMGN</div>
 </main>

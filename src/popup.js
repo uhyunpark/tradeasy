@@ -67,6 +67,7 @@ function view() {
   $('hTitle').textContent = v === 'vSend' ? T('SOL 출금') : T('설정');
   show('modeSeg', !inSettings && !setup && v !== 'vLocked');
   show('btnGear', !inSettings && !setup);
+  show('btnObBack', setup && !!obPrev());
   show('langMini', setup || v === 'vLocked'); // settings are not reachable here: language toggle in the header
   show('siteStatus', !inSettings && !setup);
   show('liveConfirm', liveAsk && !inSettings && !setup);
@@ -106,6 +107,35 @@ async function renderSite() {
 }
 
 $('teSwitch').addEventListener('change', () => chrome.storage.local.set({ teMode_axiom: $('teSwitch').checked }));
+
+// ---------- onboarding: back ----------
+// previous step; going back to the wallet step removes the wallet made or imported in this onboarding
+function obPrev() {
+  if (!OB) return null;
+  if (OB.step === 'helius') return W.encrypted ? null : 'lock'; // lock already set: nothing to redo
+  if (OB.step === 'lock') return OB.created ? 'backup' : 'wallet';
+  if (OB.step === 'backup') return 'wallet';
+  return null;
+}
+$('btnObBack').onclick = async () => {
+  const prev = obPrev();
+  if (!prev) return;
+  if (prev !== 'wallet') { await setOnboard({ ...OB, step: prev }); return refresh(); }
+  const created = OB.created !== false;
+  const { ok } = await dialog({
+    title: T('처음으로 돌아갈까요?'),
+    body: created
+      ? T('<div class="warnbox">방금 만든 지갑을 지웁니다. 백업한 key가 있다면 나중에 가져오기로 다시 쓸 수 있습니다.</div>')
+      : T('<div class="small">가져온 지갑을 이 확장프로그램에서 지웁니다. 지갑 자체는 그대로입니다.</div>'),
+    yes: T('처음으로'), tone: created ? 'danger' : 'primary',
+  });
+  if (!ok) return;
+  const b = await send({ type: 'wallet:balance' }).catch(() => null);
+  if (b && b.sol > 0) return dialog({ title: T('지우지 않았습니다'), body: `<div class="small">${T('이 지갑에 SOL이 있어 지우지 않았습니다. 설정을 마친 뒤 출금하세요.')}</div>` });
+  await send({ type: 'wallet:remove' });
+  await setOnboard(null);
+  await refresh();
+};
 
 // ---------- onboarding: 1 wallet ----------
 $('chCreate').onclick = async () => {
@@ -530,7 +560,10 @@ async function renderAll() {
 async function refresh() { await load(); await renderAll(); }
 
 // language: 한국어 / English (settings). Static markup is translated in place; dynamic parts re-render.
-const renderLang = () => document.querySelectorAll('#langSeg button, #langMini button').forEach((b) => b.classList.toggle('on', b.dataset.lang === TE_I18N.lang));
+const renderLang = () => {
+  document.querySelectorAll('#langSeg button, #langMini button').forEach((b) => b.classList.toggle('on', b.dataset.lang === TE_I18N.lang));
+  $('langTitle').textContent = TE_I18N.lang === 'ko' ? 'Language' : '언어'; // in the other language, so it can be found either way
+};
 document.querySelectorAll('#langSeg button, #langMini button').forEach((b) => { b.onclick = () => TE_I18N.setLang(b.dataset.lang); });
 TE_I18N.onChange(() => { TE_I18N.dom(document.body); renderLang(); renderSite(); renderAll(); });
 TE_I18N.init().then(() => { TE_I18N.dom(document.body); renderLang(); renderSite(); refresh(); });

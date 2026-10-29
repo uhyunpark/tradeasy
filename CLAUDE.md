@@ -22,7 +22,7 @@ terminal page
      │  chrome.runtime.sendMessage
 background (service worker) router, state cache, build/verify/sign/send/confirm, positions
      │
-  popup.html/js             onboarding, wallet, current token + PnL, log, settings
+  popup.html/js             onboarding (wallet → backup → lock → Helius, with back), wallet, current token + PnL, log, settings
 ```
 
 - hook → content kinds: `blockhash`, `trade`, `pool-info`, `pair-info` (incl. name/symbol/image), `slippage`, `row-info` (answer to `resolve-row`). content → hook: `resolve-row`, `avg-line`.
@@ -97,7 +97,7 @@ Not supported directly (and not routed): Raydium AMM v4 (incl. LaunchLab coins t
 
 ## UI language
 
-- Setting: `lang` in `chrome.storage.local` (`ko` | `en`), default from `navigator.language`. Changes apply live in every context (`storage.onChanged`).
+- Setting: `lang` in `chrome.storage.local` (`ko` | `en`), default from `navigator.language`. Changes apply live in every context (`storage.onChanged`). Switch: bottom card of settings (its label is in the other language: "Language" in Korean UI, "언어" in English UI) and a small 한 | EN toggle in the header on the onboarding and lock screens.
 - New UI text: write it in Korean inside `T('…')` (placeholders `{name}`), add the English entry to `src/i18n-en.js`, run `node test/i18n-check.mjs` (fails on missing entries). Static popup text needs only the English entry.
 - Error sentences in `errors.js` are plain Korean strings translated at `explain()` time (never call `T` at module load).
 - e2e: `UI_LANG=en` runs the popup and toasts in English (default `ko`).
@@ -135,4 +135,5 @@ Release: bump the version in `build.mjs` and `package.json`, build, run both e2e
 - **Jupiter:** keyless 0.5 req/s (optional key in settings > 고급 > `jupiterApiKey`, 1 req/s). `/build` has no Jupiter swap fee (`/order` does: do not use it). Slippage failure is Jupiter error 6001. Host permission `https://api.jup.ag/*`.
 - **Sender:** `skipPreflight`, `maxRetries: 0`; the same signed tx is re-sent every 300 ms up to 3 times (~1 s) until its signature is seen (`trade.js` `rebroadcast`). Same signature, so it lands at most once; min-out still bounds the price. Free plan: Sender 50 req/s and 0 credits; RPC 10 req/s and 1M credits/month (page watching dominates usage).
 - **Orphaned tabs:** after reloading the extension, open terminal tabs are orphaned until refreshed (content shows a toast; the popup offers a tab refresh).
+- **Onboarding back:** lock → backup (new wallet) or → start over (imported); backup → start over; Helius → lock unless the lock was set. Start over removes the wallet made/imported in this onboarding, never one that holds SOL.
 - **Wallet sharing:** Tradeasy and the user's Axiom wallet can be the same key, so Axiom's UI also shows Tradeasy trades.

@@ -126,8 +126,24 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   const popErrors = [];
   pop.on('pageerror', (e) => popErrors.push(e.message));
   await pop.goto(`chrome-extension://${extId}/popup.html`);
+  // back navigation: backup -> start over (wallet removed) -> create again; lock -> backup
+  const obBack = {};
+  obBack.onWalletStep = await pop.isVisible('#btnObBack');
   await pop.click('#chCreate');
   await pop.waitForSelector('#vBackup:not(.hidden)', { timeout: 15000 });
+  const firstPub = await pop.evaluate(() => chrome.storage.local.get('vault').then((s) => s.vault.pubkey));
+  await pop.click('#btnObBack'); await pop.click('#dlgYes');
+  await pop.waitForSelector('#vOnboard:not(.hidden)', { timeout: 10000 });
+  obBack.walletRemoved = await pop.evaluate(() => chrome.storage.local.get('vault').then((s) => !s.vault));
+  await pop.click('#chCreate');
+  await pop.waitForSelector('#vBackup:not(.hidden)', { timeout: 15000 });
+  obBack.newWallet = (await pop.evaluate(() => chrome.storage.local.get('vault').then((s) => s.vault.pubkey))) !== firstPub;
+  await pop.check('#backupChk'); await pop.click('#btnBackupDone');
+  await pop.waitForSelector('#vLockSetup:not(.hidden)', { timeout: 10000 });
+  await pop.click('#btnObBack');
+  await pop.waitForSelector('#vBackup:not(.hidden)', { timeout: 10000 });
+  obBack.lockToBackup = true;
+  obBack.keyShownAgain = (await pop.textContent('#backupKey')).length > 40;
   await pop.waitForTimeout(300);
   const backupKeyLen = (await pop.textContent('#backupKey')).length;
   const doneDisabled = await pop.isDisabled('#btnBackupDone');
@@ -321,12 +337,12 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   const langSwitch = await pop.evaluate(async () => {
     const before = TE_I18N.lang;
     await TE_I18N.setLang(before === 'en' ? 'ko' : 'en'); await new Promise((r) => setTimeout(r, 400));
-    const r = { before, after: TE_I18N.lang, settingsTitle: document.querySelector('#vSettings .ttl').textContent, todo: document.querySelector('#todoHead') && document.querySelector('#todoHead').textContent };
+    const r = { before, after: TE_I18N.lang, settingsTitle: document.querySelector('#langTitle').textContent, todo: document.querySelector('#todoHead') && document.querySelector('#todoHead').textContent };
     await TE_I18N.setLang(before); await new Promise((r2) => setTimeout(r2, 400));
-    r.back = document.querySelector('#vSettings .ttl').textContent;
+    r.back = document.querySelector('#langTitle').textContent;
     return r;
   });
-  console.log(JSON.stringify({ langSwitch, logTest, accounts, hlinkHiddenWhenConnected, teMode, withdraw, lockTest, tokCard, tokCardOrphan, rpcAtClick, backupKeyLen, cfgAfter, pubkey, sMsg, frames, popText, toastText, axiomClicks, simTxLen: simTx && simTx.length, senderHit,
+  console.log(JSON.stringify({ obBack, langSwitch, logTest, accounts, hlinkHiddenWhenConnected, teMode, withdraw, lockTest, tokCard, tokCardOrphan, rpcAtClick, backupKeyLen, cfgAfter, pubkey, sMsg, frames, popText, toastText, axiomClicks, simTxLen: simTx && simTx.length, senderHit,
     syntheticOpenedPopover: popAfterSynthetic, senderUrl, senderCount, senderParams: senderBody && senderBody.params[1], confirmToast, rpcCalls, swErrors, popErrors, pageErrors }, null, 2));
   if (process.env.ORPHAN) {
     await page.keyboard.press('Escape');
