@@ -1,0 +1,195 @@
+[
+ {
+  "mint": "BAVYwbDmuWaECkYQKJErMCHFTb8DBkQgkqYNYdxEhS6f",
+  "protocol": "Pump",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.05
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ]
+ },
+ {
+  "mint": "GHaCnN6CwhXNHzTpC2m8et6ZjqZ9tLvzj6YUFybwpump",
+  "protocol": "Pump AMM",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.05
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ]
+ },
+ {
+  "mint": "6YPqgQoBwvcfzWmhm2HbgfxNxSKStT12sZ78B1sypump",
+  "protocol": "pump_amm",
+  "pool": "6vodN6AM6weEcgTEBsPEnqJk6tvpuvzVQBRpFSzcAq2s",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.01
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ],
+  "note": "non-canonical, reversed PumpSwap pool (base=WSOL)"
+ },
+ {
+  "mint": "4tugkahz1c4rzR8PT4P2Eyz4H3ezAVuF5rb4eTxb4PsC",
+  "protocol": "meteora_damm_v2",
+  "pool": "4CujMKtittd1EMs1uq1JKhqikQfCf4cJXU1T1XEUXTpy",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.01
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ]
+ },
+ {
+  "mint": "6TnYKD4fdFMNbPrbErNhXALeRuhFMRze2rHkHsSmbk4e",
+  "protocol": "meteora_dbc",
+  "pool": "EXcfMF6kGRzHWrwfxJyCZnvKFmj63KxyWwQVhZA5Bnnn",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.01
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ],
+  "note": "graduated DBC -> follows derived DAMM v2 pool"
+ },
+ {
+  "mint": "8f811AxA8Sk8cBJTED8NyWBUNuZ1j6VWgwF9aVoq4JK4",
+  "protocol": "meteora_dbc",
+  "pool": "BscH5nc3YtUaHz95e8FMk3KDocwCuC2wnik3DFMhnf5P",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.01
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ]
+ },
+ {
+  "mint": "h5Bxcuj2M1vgkMMA3tFNf4Fs8LTrT5PxeQDHB3HS2Bv",
+  "protocol": "meteora_dbc",
+  "pool": "ERX1phiS729g6BFbVjLCpSTnvjPxn1Wk2VhPyYYNUzfV",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.01
+   }
+  ],
+  "note": "graduated DBC whose DAMM v2 pool is not in fixtures: expected error"
+ },
+ {
+  "mint": "HeXvahdL53ZbczmLrKf4CgHUBFHdmajVNGEf4Bom4LGe",
+  "protocol": "raydium_launchlab",
+  "pool": "EWKYboUGC2vdfvuAEQ3TgmHUn7nmRmHH7YNgGc5BK1PZ",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.05
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ],
+  "note": "LaunchLab curve (bonk platform)"
+ },
+ {
+  "mint": "HeXvahdL53ZbczmLrKf4CgHUBFHdmajVNGEf4Bom4LGe",
+  "protocol": "Raydium Launchlab",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.01
+   }
+  ],
+  "note": "no pool hint: LaunchLab pool derived from the mint"
+ },
+ {
+  "mint": "6SNLvR16o1CRV4wMxMLS4taTgYz2FefgvV4J62i8meme",
+  "protocol": "raydium_launchlab",
+  "pool": "FhD7p1XozHc8BoUeTtaq4uUXEoreaHgXnHQfspLSBwBU",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.05
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ],
+  "note": "LaunchLab curve, other platform (platform fee)"
+ },
+ {
+  "mint": "835qApBwFrEAVkEoUW6D57oW8n2mW2btvfGKib8qV7XY",
+  "protocol": "raydium_launchlab",
+  "pool": "EA7qw9CzeQTgSBrzXrzuRkm39Y56oYcUePL4YCkmXHdF",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.05
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ],
+  "note": "graduated LaunchLab -> follows derived CPMM pool (creator fee on)"
+ },
+ {
+  "mint": "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
+  "protocol": "raydium_cpmm",
+  "pool": "Q2sPHPdUWFMg7M7wwrQKLrn619cAucfRsmhVJffodSp",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.05
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ],
+  "note": "CPMM, feeOn both"
+ },
+ {
+  "mint": "2gLhk8p2KvUFeUXur2hiF4hxjdRM1vBcbgo9Q7DMZfiw",
+  "protocol": "raydium_cpmm",
+  "pool": "Rwq7WrFAzyBtDzGBxYKEHAtHfhAedW6vYqghPT1xBau",
+  "reqs": [
+   {
+    "side": "buy",
+    "sol": 0.05
+   },
+   {
+    "side": "sell",
+    "percent": 50
+   }
+  ],
+  "note": "CPMM, creator fee only on token0 (WSOL)"
+ }
+]
