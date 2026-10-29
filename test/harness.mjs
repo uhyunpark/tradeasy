@@ -101,6 +101,37 @@ for (const c of cases) {
     results.push(r);
   } catch (e) { results.push({ mint: c.mint, error: e.message, stack: e.stack.split('\n').slice(0, 3).join(' | ') }); }
 }
+// Jupiter route (non-SOL quote): mocked /swap/v2/build response, real buildIxs + verify + v0 compile with a lookup table
+{
+  const { SystemProgram, TransactionInstruction, TransactionMessage, VersionedTransaction } = await import('@solana/web3.js');
+  const BN = (await import('bn.js')).default;
+  const mint = new PublicKey('5DAqRe7Fa7SzVN3urM8hqKfmCUwZvowZTvp5WMgupump');
+  const wsol = spl.getAssociatedTokenAddressSync(spl.NATIVE_MINT, user.publicKey, true);
+  const J = (ix) => ({ programId: ix.programId.toBase58(), accounts: ix.keys.map((k) => ({ pubkey: k.pubkey.toBase58(), isSigner: k.isSigner, isWritable: k.isWritable })), data: Buffer.from(ix.data).toString('base64') });
+  const altKeys = Array.from({ length: 30 }, () => Keypair.generate().publicKey);
+  const swap = new TransactionInstruction({ programId: new PublicKey('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4'), keys: [{ pubkey: user.publicKey, isSigner: true, isWritable: true }, ...altKeys.map((pubkey) => ({ pubkey, isSigner: false, isWritable: false }))], data: Buffer.alloc(24) });
+  const body = (buy) => ({
+    inAmount: buy ? '10000000' : '500000000000', outAmount: buy ? '36000000000' : '9000000', otherAmountThreshold: '1', priceImpactPct: '0.01',
+    routePlan: [{ swapInfo: { label: 'Raydium CLMM' } }, { swapInfo: { label: 'Pump.fun Amm' } }],
+    setupInstructions: [J(spl.createAssociatedTokenAccountIdempotentInstruction(user.publicKey, wsol, user.publicKey, spl.NATIVE_MINT)),
+      ...(buy ? [J(SystemProgram.transfer({ fromPubkey: user.publicKey, toPubkey: wsol, lamports: 10_000_000 })), J(spl.createSyncNativeInstruction(wsol))] : [])],
+    swapInstruction: J(swap), cleanupInstruction: J(spl.createCloseAccountInstruction(wsol, user.publicKey, user.publicKey)), otherInstructions: [],
+    addressesByLookupTableAddress: { [Keypair.generate().publicKey.toBase58()]: altKeys.map((k) => k.toBase58()) },
+  });
+  const realFetch = globalThis.fetch; let jupUrl = null;
+  globalThis.fetch = async (url, opts) => { if (String(url).startsWith('https://api.jup.ag/')) { jupUrl = String(url); return new Response(JSON.stringify(body(/inputMint=So111/.test(jupUrl))), { status: 200 }); } return realFetch(url, opts); };
+  const st = { venue: 'jupiter', mint: mint.toBase58(), quoteMint: '98sMhvDwXj1RQi5c5Mndm3vPe9cBqPrbLaufMXFNMh5g', tokenBalance: new BN('1000000000000'), tokenProgram: spl.TOKEN_PROGRAM_ID };
+  const jr = {};
+  for (const req of [{ side: 'buy', sol: 0.01 }, { side: 'sell', percent: 50 }]) {
+    try {
+      const b = await trade.buildIxs(st, user.publicKey, req, preset, { cuLimit: 200000 });
+      const m = new TransactionMessage({ payerKey: user.publicKey, recentBlockhash: '11111111111111111111111111111111', instructions: b.ixs }).compileToV0Message(b.alts);
+      jr[req.side] = { ok: true, ixs: b.ixs.length, alts: b.alts.length, cuLimit: b.cuLimit, size: new VersionedTransaction(m).serialize().length, route: b.quote.route, url: jupUrl.replace(/taker=\w+/, 'taker=…') };
+    } catch (e) { jr[req.side] = { error: e.message }; }
+  }
+  globalThis.fetch = realFetch;
+  results.push({ jupiter: jr });
+}
 console.log(JSON.stringify({ results, missing: [...missing], calls: [...new Set(calls)] }, null, 2));
 server.close();
 process.exit(0);

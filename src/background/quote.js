@@ -41,7 +41,7 @@ export async function quoteOut(st, side, amountIn) {
   const c = await market.cacheConnection();
   if (st.venue === 'meteora_damm_v2') return quoteDammV2(c, st, buy, amountIn);
   if (st.venue === 'meteora_dbc') return quoteDbc(c, st, buy, amountIn);
-  throw new Error('no quote for venue ' + st.venue);
+  throw new Error('no local quote for venue ' + st.venue); // jupiter: quoted at click time
 }
 
 const pctOf = (bn, pct) => bn.mul(new BN(Math.round(pct * 100))).div(new BN(10_000));
@@ -60,6 +60,7 @@ async function refRateOf(st, side, sizes) {
 export async function preview(st, decimals, { side, sols = [], pcts = [] }) {
   const toUi = (bn, d) => Number(bn.toString()) / 10 ** d;
   const out = [];
+  if (st.venue === 'jupiter') return out; // routed at click time: no local quote
   if (side === 'buy') {
     const refRate = await refRateOf(st, 'buy', [new BN(1_000_000), new BN(10_000_000)]); // 0.001 / 0.01 SOL
     for (const sol of sols) {
@@ -86,7 +87,7 @@ export async function preview(st, decimals, { side, sols = [], pcts = [] }) {
   return out;
 }
 
-// SOL you would get for selling the whole DX balance now (after fees and impact).
+// SOL you would get for selling the whole Tradeasy balance now (after fees and impact).
 export async function liquidationValue(st) {
   if (!st.tokenBalance || st.tokenBalance.lten(0)) return 0;
   try { return Number((await quoteOut(st, 'sell', st.tokenBalance)).toString()) / 1e9; } catch (_) { return null; }

@@ -55,7 +55,7 @@ export async function loadDammV2(conn, poolKey, mint, user) {
   const aIsMint = poolState.tokenAMint.equals(mint), bIsMint = poolState.tokenBMint.equals(mint);
   if (!aIsMint && !bIsMint) throw new Error('DAMM v2 pool does not contain this token');
   const quoteMint = aIsMint ? poolState.tokenBMint : poolState.tokenAMint;
-  if (!quoteMint.equals(NATIVE_MINT)) throw new Error('only SOL-quoted pools are supported');
+  if (!quoteMint.equals(NATIVE_MINT)) throw new Error(`only SOL-quoted pools are supported (quote ${quoteMint.toBase58()})`);
   const [a, b] = await Promise.all([mintInfo(conn, poolState.tokenAMint), mintInfo(conn, poolState.tokenBMint)]);
   const tokenProgram = aIsMint ? a.program : b.program;
   const point = await currentPoint(conn, poolState.activationType); // warms getSlot
@@ -105,7 +105,7 @@ export async function loadDbc(conn, poolKey, mint, user) {
   if (!vps.baseMint.equals(mint)) throw new Error('DBC pool baseMint mismatch');
   const config = await client.state.getPoolConfig(vps.config);
   if (!config) throw new Error('DBC config not found');
-  if (!config.quoteMint.equals(NATIVE_MINT)) throw new Error('only SOL-quoted curves are supported');
+  if (!config.quoteMint.equals(NATIVE_MINT)) throw new Error(`only SOL-quoted curves are supported (quote ${config.quoteMint.toBase58()})`);
   const migrated = Number(vps.isMigrated || 0) !== 0;
   // curve filled up to the migration threshold: swaps are closed until the migration tx lands
   const completed = !migrated && (Number(vps.finishCurveTimestamp || 0) > 0 || !!(vps.quoteReserve && config.migrationQuoteThreshold && vps.quoteReserve.gte(config.migrationQuoteThreshold)));

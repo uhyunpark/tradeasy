@@ -39,7 +39,7 @@ function withCache(c, mode) {
 let conn = null, cacheConn = null, connUrl = null, bcSdk = null, ammSdk = null;
 export async function connection() {
   const { rpcUrl } = await getConfig();
-  if (!rpcUrl) throw new Error('Helius API key is not set (DX popup)');
+  if (!rpcUrl) throw new Error('Helius API key is not set (Tradeasy popup)');
   if (!conn || connUrl !== rpcUrl) {
     conn = withCache(new Connection(rpcUrl, { commitment: 'confirmed', disableRetryOnRateLimit: true }), 'live');
     cacheConn = withCache(new Connection(rpcUrl, { commitment: 'confirmed', disableRetryOnRateLimit: true }), 'cache');
@@ -122,6 +122,7 @@ export async function refresh(mintStr, user, hint = {}) {
       states.set(mintStr, vst);
       return vst;
     };
+    try {
     // 1) the terminal told us the pool: identify the venue by the pool account's owner program
     let poolKey = null, hintedAmmPool = null;
     try { if (hint.pool) poolKey = new PublicKey(hint.pool); } catch (_) {}
@@ -208,6 +209,15 @@ export async function refresh(mintStr, user, hint = {}) {
       };
     }
     return keep(st);
+    } catch (e) {
+      // pool paired with another token (PUMP, HYPE, USDC, ...): route through Jupiter instead
+      if (!/only SOL-(?:quoted|paired)/.test(e.message || '')) throw e;
+      const q = /\(quote (\w+)\)/.exec(e.message);
+      const tokenProgram = await tokenProgramOf(mint);
+      const ata = getAssociatedTokenAddressSync(mint, user, true, tokenProgram);
+      const info = await c.getAccountInfo(ata);
+      return keep({ venue: 'jupiter', mint: mintStr, tokenProgram, quoteMint: q ? q[1] : null, tokenBalance: tokenAmount(info, ata, tokenProgram) });
+    }
   })().finally(() => inflight.delete(mintStr));
   inflight.set(mintStr, p);
   return p;
@@ -223,6 +233,7 @@ export function summary(st) {
     return { ...base, complete: st.bondingCurve.complete, mayhem: st.bondingCurve.isMayhemMode, cashback: st.bondingCurve.isCashbackCoin,
       virtualSol: st.bondingCurve.virtualQuoteReserves?.toString?.(), virtualToken: st.bondingCurve.virtualTokenReserves.toString() };
   }
+  if (st.venue === 'jupiter') return { ...base, quoteMint: st.quoteMint };
   if (st.venue === 'pumpswap') return { ...base, pool: st.swapState.poolKey.toBase58(), reversed: !!st.reversed, baseReserve: st.swapState.poolBaseAmount.toString(), quoteReserve: st.swapState.poolQuoteAmount.toString() };
   return { ...base, pool: st.poolKey.toBase58() };
 }

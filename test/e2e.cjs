@@ -1,5 +1,5 @@
 // End-to-end: load the built extension in Chromium, create a wallet in the popup,
-// open a mock Axiom token page, click DX -> 0.01 -> simulate, read the toast.
+// open a mock Axiom token page, click Tradeasy -> 0.01 -> simulate, read the toast.
 process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1';
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -12,7 +12,7 @@ const PROTOCOL = process.argv[3] || 'Pump';
 const SIDE = process.argv[4] || 'Buy';
 
 // Axiom-like trade panel: chips are div[role=button], the market button trades on pointerdown and the
-// page's handlers sit on the root (like React), so DX must stop them in the capture phase.
+// page's handlers sit on the root (like React), so Tradeasy must stop them in the capture phase.
 const page_html = `<!doctype html><html><body style="background:#111;color:#eee;font-family:sans-serif">
 <div id="__next"><div style="width:360px;padding:40px 12px 12px">
   <div id="panel"><div>AMOUNT <span><input id="amt" placeholder="0.0" value=""></span>${SIDE === 'Sell' ? ' %' : ''}</div>
@@ -23,7 +23,7 @@ const page_html = `<!doctype html><html><body style="background:#111;color:#eee;
 </div></div>
 <script>
 window.__axiomTrades = 0; window.__axiomChip = 0;
-// TradingView-like chart in a same-origin iframe (as on Axiom): records the shapes DX draws
+// TradingView-like chart in a same-origin iframe (as on Axiom): records the shapes Tradeasy draws
 window.__shapes = [];
 const tv = document.createElement('iframe'); tv.id = 'tradingview_test'; tv.style.cssText = 'width:10px;height:10px;border:0'; document.body.appendChild(tv);
 tv.contentWindow.tradingViewApi = { activeChart: () => ({
@@ -195,75 +195,75 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await page.waitForTimeout(3500);
   const frames = await page.evaluate(() => window.__axiomFrames || 0);
   const pressAt = async (sel) => { const b = await page.locator(sel).boundingBox(); await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2); };
-  let popText = null, toastText, rpcAtClick, axiomClicks, confirmToast = null, popAfterSynthetic = null, dxMode = null;
-  const lastToast = () => page.evaluate(() => { const t = document.querySelector('.dx-toast.ok .bd, .dx-toast.err .bd'); return t ? t.innerText.replace(/\s+/g, ' ') : null; });
+  let popText = null, toastText, rpcAtClick, axiomClicks, confirmToast = null, popAfterSynthetic = null, teMode = null;
+  const lastToast = () => page.evaluate(() => { const t = document.querySelector('.te-toast.ok .bd, .te-toast.err .bd'); return t ? t.innerText.replace(/\s+/g, ' ') : null; });
   const waitToast = async (prev) => { for (let i = 0; i < 60; i++) { const t = await lastToast(); if (t && t !== prev) return t; await page.waitForTimeout(250); } return null; };
   if (process.env.SITE === 'gmgn') {
-    // GMGN: DX badge -> popover -> amount
-    await page.click('#dx-layer .dx-badge');
-    await page.waitForSelector('.dx-pop button[data-sol], .dx-pop button[data-pct]', { timeout: 8000 });
+    // GMGN: Tradeasy badge -> popover -> amount
+    await page.click('#te-layer .te-badge');
+    await page.waitForSelector('.te-pop button[data-sol], .te-pop button[data-pct]', { timeout: 8000 });
     await page.waitForTimeout(1500); // let state load
     await page.keyboard.press('Escape');
-    await page.click('#dx-layer .dx-badge'); // reopen with state
+    await page.click('#te-layer .te-badge'); // reopen with state
     await page.waitForTimeout(1400);
-    popText = await page.textContent('.dx-pop');
+    popText = await page.textContent('.te-pop');
     await page.screenshot({ path: path.join(OUT, 'e2e-popover.png') });
-    const target = SIDE === 'Buy' ? '.dx-pop button[data-sol="0.01"]' : '.dx-pop button[data-pct="50"]';
+    const target = SIDE === 'Buy' ? '.te-pop button[data-sol="0.01"]' : '.te-pop button[data-pct="50"]';
     const rpcBefore = JSON.stringify(rpcCalls);
     await page.click(target);
     toastText = await waitToast(null);
     rpcAtClick = { before: JSON.parse(rpcBefore), after: JSON.parse(JSON.stringify(rpcCalls)) };
     axiomClicks = await page.evaluate(() => window.__gmgnClicks || 0);
-    if (process.env.LIVE) { await page.waitForTimeout(4000); confirmToast = await page.evaluate(() => [...document.querySelectorAll('.dx-toast')].map((x) => x.innerText).join(' || ')); }
-    await page.evaluate(() => document.querySelector('#dx-layer .dx-badge').click()); // synthetic: must not open
+    if (process.env.LIVE) { await page.waitForTimeout(4000); confirmToast = await page.evaluate(() => [...document.querySelectorAll('.te-toast')].map((x) => x.innerText).join(' || ')); }
+    await page.evaluate(() => document.querySelector('#te-layer .te-badge').click()); // synthetic: must not open
     await page.waitForTimeout(500);
-    popAfterSynthetic = !!(await page.$('.dx-pop'));
+    popAfterSynthetic = !!(await page.$('.te-pop'));
   } else {
-    // Axiom: DX mode on by default -> the page's own chip and market button
+    // Axiom: Tradeasy mode on by default -> the page's own chip and market button
     await page.waitForTimeout(1500);
-    dxMode = { badge: await page.getAttribute('#dx-layer .dx-badge', 'aria-checked'), cover: await page.isVisible('#dx-layer .dx-cover') };
+    teMode = { badge: await page.getAttribute('#te-layer .te-badge', 'aria-checked'), cover: await page.isVisible('#te-layer .te-cover') };
     { const b = await page.locator('#main').boundingBox(); await page.screenshot({ path: path.join(OUT, `cover-${process.env.LIVE ? 'live' : 'sim'}.png`), clip: { x: b.x - 30, y: b.y - 30, width: b.width + 60, height: b.height + 60 } }); }
     await page.click(SIDE === 'Buy' ? '.chip >> text="0.01"' : '.chip >> text="50%"');
-    dxMode.inputAfterChip = await page.inputValue('#amt');
-    dxMode.chipReachedPage = await page.evaluate(() => window.__axiomChip);
+    teMode.inputAfterChip = await page.inputValue('#amt');
+    teMode.chipReachedPage = await page.evaluate(() => window.__axiomChip);
     const rpcBefore = JSON.stringify(rpcCalls);
-    dxMode.cover = await page.evaluate(() => { const c = document.querySelector('#dx-layer .dx-cover'), m = document.getElementById('main'); const a = c.getBoundingClientRect(), b = m.getBoundingClientRect(); return { text: c.innerText, hasIcon: !!c.querySelector('img'), aligned: ['left', 'top', 'width', 'height'].every((k) => Math.abs(a[k] - b[k]) < 1), radius: c.style.borderRadius }; });
-    await pressAt('#main'); // a real press where Axiom's button is: lands on the DX cover
+    teMode.cover = await page.evaluate(() => { const c = document.querySelector('#te-layer .te-cover'), m = document.getElementById('main'); const a = c.getBoundingClientRect(), b = m.getBoundingClientRect(); return { text: c.innerText, hasIcon: !!c.querySelector('img'), aligned: ['left', 'top', 'width', 'height'].every((k) => Math.abs(a[k] - b[k]) < 1), radius: c.style.borderRadius }; });
+    await pressAt('#main'); // a real press where Axiom's button is: lands on the Tradeasy cover
     toastText = await waitToast(null);
     rpcAtClick = { before: JSON.parse(rpcBefore), after: JSON.parse(JSON.stringify(rpcCalls)) };
-    if (process.env.LIVE) { await page.waitForTimeout(4000); confirmToast = await page.evaluate(() => [...document.querySelectorAll('.dx-toast')].map((x) => x.innerText).join(' || ')); }
-    if (process.env.LIVE) { await page.waitForTimeout(3500); dxMode.avgLine = await page.evaluate(() => window.__shapes.slice(-2)); }
+    if (process.env.LIVE) { await page.waitForTimeout(4000); confirmToast = await page.evaluate(() => [...document.querySelectorAll('.te-toast')].map((x) => x.innerText).join(' || ')); }
+    if (process.env.LIVE) { await page.waitForTimeout(3500); teMode.avgLine = await page.evaluate(() => window.__shapes.slice(-2)); }
     // list quick buy: token from the row link
     await page.click('#quick');
-    dxMode.quickToast = await waitToast(toastText);
+    teMode.quickToast = await waitToast(toastText);
     // one-click button whose token cannot be resolved (no props, no row link): blocked, never the page token
     await page.click('#quick2');
-    dxMode.unknownQuickToast = await waitToast(dxMode.quickToast);
-    // synthetic pointerdown from page JS: blocked for the page, ignored by DX
-    const before = await page.evaluate(() => document.querySelectorAll('.dx-toast').length);
+    teMode.unknownQuickToast = await waitToast(teMode.quickToast);
+    // synthetic pointerdown from page JS: blocked for the page, ignored by Tradeasy
+    const before = await page.evaluate(() => document.querySelectorAll('.te-toast').length);
     await page.evaluate(() => document.getElementById('main').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 })));
     await page.waitForTimeout(800);
-    dxMode.syntheticToasts = (await page.evaluate(() => document.querySelectorAll('.dx-toast').length)) - before;
-    dxMode.tradesReachedPageWhileOn = await page.evaluate(() => window.__axiomTrades);
-    // badge toggles DX mode off: now the page itself trades
-    await page.click('#dx-layer .dx-badge');
+    teMode.syntheticToasts = (await page.evaluate(() => document.querySelectorAll('.te-toast').length)) - before;
+    teMode.tradesReachedPageWhileOn = await page.evaluate(() => window.__axiomTrades);
+    // badge toggles Tradeasy mode off: now the page itself trades
+    await page.click('#te-layer .te-badge');
     await page.waitForTimeout(300);
-    dxMode.badgeOff = await page.getAttribute('#dx-layer .dx-badge', 'aria-checked');
+    teMode.badgeOff = await page.getAttribute('#te-layer .te-badge', 'aria-checked');
     { const b = await page.locator('#main').boundingBox(); await page.screenshot({ path: path.join(OUT, 'cover-off.png'), clip: { x: b.x - 30, y: b.y - 30, width: b.width + 60, height: b.height + 60 } }); }
     await page.click('#main');
-    dxMode.tradesReachedPageWhenOff = await page.evaluate(() => window.__axiomTrades);
-    await page.click('#dx-layer .dx-badge'); // back on
-    // popup switch writes dxMode_axiom: the page follows without a reload
-    await pop.evaluate(() => chrome.storage.local.set({ dxMode_axiom: false }));
+    teMode.tradesReachedPageWhenOff = await page.evaluate(() => window.__axiomTrades);
+    await page.click('#te-layer .te-badge'); // back on
+    // popup switch writes teMode_axiom: the page follows without a reload
+    await pop.evaluate(() => chrome.storage.local.set({ teMode_axiom: false }));
     await page.waitForTimeout(300);
-    dxMode.popupOff = { badge: await page.getAttribute('#dx-layer .dx-badge', 'aria-checked'), cover: await page.isVisible('#dx-layer .dx-cover') };
-    await pop.evaluate(() => chrome.storage.local.set({ dxMode_axiom: true }));
+    teMode.popupOff = { badge: await page.getAttribute('#te-layer .te-badge', 'aria-checked'), cover: await page.isVisible('#te-layer .te-cover') };
+    await pop.evaluate(() => chrome.storage.local.set({ teMode_axiom: true }));
     await page.waitForTimeout(300);
-    dxMode.popupOn = { badge: await page.getAttribute('#dx-layer .dx-badge', 'aria-checked'), cover: await page.isVisible('#dx-layer .dx-cover') };
-    axiomClicks = dxMode.tradesReachedPageWhileOn;
+    teMode.popupOn = { badge: await page.getAttribute('#te-layer .te-badge', 'aria-checked'), cover: await page.isVisible('#te-layer .te-cover') };
+    axiomClicks = teMode.tradesReachedPageWhileOn;
   }
   await page.screenshot({ path: path.join(OUT, 'e2e.png') });
-  { const box = await page.$('.dx-toasts'); if (box) await box.screenshot({ path: path.join(OUT, process.env.LIVE ? 'toasts-live.png' : 'toasts-sim.png') }); }
+  { const box = await page.$('.te-toasts'); if (box) await box.screenshot({ path: path.join(OUT, process.env.LIVE ? 'toasts-live.png' : 'toasts-sim.png') }); }
 
   const tokCard = await pop.evaluate(async () => {
     const list = await chrome.runtime.sendMessage({ type: 'watch:get' });
@@ -296,7 +296,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await pop.click('#btnBack');
   const withdraw = { sendConfirmText, sendDone, sendBad };
   await pop.evaluate(async () => { const q = chrome.tabs.query; chrome.tabs.query = async () => [{ id: 1, url: 'https://axiom.trade/meme/x' }]; await renderSite(); chrome.tabs.query = q; });
-  await pop.screenshot({ path: path.join(OUT, 'popup-dxswitch.png'), clip: { x: 0, y: 0, width: 360, height: 90 } });
+  await pop.screenshot({ path: path.join(OUT, 'popup-teswitch.png'), clip: { x: 0, y: 0, width: 360, height: 90 } });
   const cfgAfter = await pop.evaluate(() => chrome.storage.local.get(null).then((s) => ({ hk: s.heliusApiKey, vaultPlain: !!(s.vault && s.vault.plain) })));
   await pop.waitForTimeout(3500);
   await pop.screenshot({ path: path.join(OUT, 'popup-6-home-after.png'), fullPage: true });
@@ -317,15 +317,15 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
     return { rows, icons, more, rowsOpen: document.querySelectorAll('#log > div').length, first: document.querySelector('#log > div').innerText.replace(/\s+/g, ' ') };
   });
   await pop.screenshot({ path: path.join(OUT, 'popup-6b-log.png'), fullPage: true });
-  console.log(JSON.stringify({ logTest, accounts, hlinkHiddenWhenConnected, dxMode, withdraw, lockTest, tokCard, tokCardOrphan, rpcAtClick, backupKeyLen, cfgAfter, pubkey, sMsg, frames, popText, toastText, axiomClicks, simTxLen: simTx && simTx.length, senderHit,
+  console.log(JSON.stringify({ logTest, accounts, hlinkHiddenWhenConnected, teMode, withdraw, lockTest, tokCard, tokCardOrphan, rpcAtClick, backupKeyLen, cfgAfter, pubkey, sMsg, frames, popText, toastText, axiomClicks, simTxLen: simTx && simTx.length, senderHit,
     syntheticOpenedPopover: popAfterSynthetic, senderUrl, senderCount, senderParams: senderBody && senderBody.params[1], confirmToast, rpcCalls, swErrors, popErrors, pageErrors }, null, 2));
   if (process.env.ORPHAN) {
     await page.keyboard.press('Escape');
-    const badgesBefore = await page.evaluate(() => document.querySelectorAll('#dx-layer .dx-badge').length);
+    const badgesBefore = await page.evaluate(() => document.querySelectorAll('#te-layer .te-badge').length);
     await sw.evaluate(() => chrome.runtime.reload()).catch(() => {});
     await page.waitForTimeout(4000);
-    const orphan = await page.evaluate(() => ({ badges: document.querySelectorAll('#dx-layer .dx-badge').length,
-      toast: [...document.querySelectorAll('.dx-toast')].map((x) => x.innerText)[0] }));
+    const orphan = await page.evaluate(() => ({ badges: document.querySelectorAll('#te-layer .te-badge').length,
+      toast: [...document.querySelectorAll('.te-toast')].map((x) => x.innerText)[0] }));
     let blockedAfterReload = null;
     if (process.env.SITE !== 'gmgn') { await pressAt('#main'); await page.waitForTimeout(300); blockedAfterReload = await page.evaluate(() => window.__axiomTrades === (window.__tradesBefore ?? window.__axiomTrades)); }
     console.log('ORPHAN', JSON.stringify({ badgesBefore, ...orphan, tradesAfterReload: await page.evaluate(() => window.__axiomTrades) }));

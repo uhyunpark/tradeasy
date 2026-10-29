@@ -1,4 +1,4 @@
-// DX-wallet positions per mint, from confirmed live trades only (simulations never count).
+// Tradeasy-wallet positions per mint, from confirmed live trades only (simulations never count).
 // Amounts come from the confirmed transaction itself (balance deltas), so fees, tip and
 // account rent are included in the cost.
 import { getConfig } from './config.js';
@@ -53,7 +53,7 @@ export async function record(mint, side, d) {
   return p;
 }
 
-// realized + unrealized PnL in SOL. value = SOL you would get selling the current DX balance now.
+// realized + unrealized PnL in SOL. value = SOL you would get selling the current Tradeasy balance now.
 export function pnl(p, value) {
   if (!p || !(p.solIn > 0)) return null;
   const v = value == null ? null : value;

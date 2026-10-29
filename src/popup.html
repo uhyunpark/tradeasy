@@ -128,7 +128,7 @@
   .ttl { font-weight:600; font-size:13px; margin-bottom:2px; }
   .sub { border-top:1px solid var(--line); padding-top:10px; }
   input.narrow { width:76px; flex:0 0 76px; text-align:right; }
-  .dxsw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--mut); cursor:pointer; }
+  .tesw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--mut); cursor:pointer; }
   .switch.sm { width:28px; height:16px; flex:0 0 28px; }
   .switch.sm span::after { width:12px; height:12px; }
   .switch.sm input:checked + span::after { transform:translateX(12px); }
@@ -180,7 +180,7 @@
 </head>
 <body>
 <header>
-  <div class="htitle" id="hHome"><div class="logo">DX</div>DX Trader</div>
+  <div class="htitle" id="hHome"><div class="logo">T</div>Tradeasy</div>
   <div class="htitle hidden" id="hSettings">
     <button class="icon" id="btnBack" title="뒤로" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><span id="hTitle">설정</span>
   </div>
@@ -194,7 +194,7 @@
 </header>
 
 <div class="status" id="siteStatus"><span class="dotlive"></span><img id="siteIcon" alt="" class="hidden"><span id="siteText">확인 중...</span>
-  <label class="dxsw hidden" id="dxSwitchWrap" title="DX 모드: 켜면 터미널 버튼을 DX가 체결합니다"><span>DX 모드</span><span class="switch sm"><input type="checkbox" id="dxSwitch"><span></span></span></label></div>
+  <label class="tesw hidden" id="teSwitchWrap" title="Tradeasy 모드: 켜면 터미널 버튼을 Tradeasy가 체결합니다"><span>Tradeasy 모드</span><span class="switch sm"><input type="checkbox" id="teSwitch"><span></span></span></label></div>
 
 <div id="dlg" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
   <div class="modal-card">
@@ -218,7 +218,7 @@
   <div class="stepper" data-of="wallet"></div>
   <div class="card stack">
     <h3>지갑 준비</h3>
-    <div class="mut small">DX는 이 브라우저 안의 전용 지갑으로 직접 거래합니다. 소액만 넣어 쓰는 지갑을 권장합니다.</div>
+    <div class="mut small">Tradeasy는 이 브라우저 안의 전용 지갑으로 직접 거래합니다. 소액만 넣어 쓰는 지갑을 권장합니다.</div>
     <div class="choice">
       <button id="chCreate"><b>새 지갑 만들기</b><span>새 주소를 생성합니다</span></button>
       <button id="chImport"><b>기존 지갑 가져오기</b><span>private key 붙여넣기</span></button>
@@ -237,9 +237,9 @@
   <div class="stepper" data-of="lock"></div>
   <div class="card stack">
     <h3>확장프로그램 잠금 비밀번호 <span class="pill">선택</span></h3>
-    <div class="small">Phantom, MetaMask의 잠금 비밀번호와 같은 기능입니다. 지갑 자체의 비밀번호가 아니라, <b>이 PC에서 DX Trader를 여는 비밀번호</b>입니다.</div>
+    <div class="small">Phantom, MetaMask의 잠금 비밀번호와 같은 기능입니다. 지갑 자체의 비밀번호가 아니라, <b>이 PC에서 Tradeasy를 여는 비밀번호</b>입니다.</div>
     <ul class="bullets small mut">
-      <li>브라우저를 다시 열거나 60분 동안 쓰지 않으면 DX Trader가 잠깁니다. 잠긴 동안에는 DX 버튼으로 거래할 수 없습니다.</li>
+      <li>브라우저를 다시 열거나 60분 동안 쓰지 않으면 Tradeasy가 잠깁니다. 잠긴 동안에는 Tradeasy 버튼으로 거래할 수 없습니다.</li>
       <li>이 PC에 저장되는 private key를 이 비밀번호로 암호화합니다.</li>
       <li>비밀번호는 어디에도 전송되지 않아 찾을 수 없습니다. 잊으면 private key로 지갑을 다시 가져와야 합니다.</li>
     </ul>
@@ -248,7 +248,7 @@
     <div class="msg" id="lsMsg"></div>
     <button class="btn primary block" id="btnLockSet">잠금 설정하고 계속</button>
     <button class="btn ghost block" id="btnLockSkip">잠금 없이 계속</button>
-    <div class="dim small">잠금 없이 쓰면 팝업과 DX 버튼이 바로 동작하지만, key가 이 PC의 Chrome 프로필에 암호화 없이 저장됩니다. 나중에 설정에서 켤 수 있습니다.</div>
+    <div class="dim small">잠금 없이 쓰면 팝업과 Tradeasy 버튼이 바로 동작하지만, key가 이 PC의 Chrome 프로필에 암호화 없이 저장됩니다. 나중에 설정에서 켤 수 있습니다.</div>
   </div>
 </main>
 
@@ -281,7 +281,7 @@
 <!-- extension lock is on and locked -->
 <main id="vLocked" class="hidden">
   <div class="card stack">
-    <h3>DX Trader 잠김</h3>
+    <h3>Tradeasy 잠김</h3>
     <div class="mut small">확장프로그램 잠금 비밀번호를 입력하세요.</div>
     <div class="addr mono small" id="lockedAddr"></div>
     <input id="unlockPw" type="password" placeholder="잠금 비밀번호">
@@ -308,7 +308,7 @@
       <div class="step" id="stKey"><div class="dot" id="tdKey">1</div><div><span id="tdKeyText">Helius 연결</span> <button class="link" data-goto="settings" id="tdKeyGo">설정 열기 ›</button>
         <div class="small" id="tdKeySub"><a href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a></div></div></div>
       <div class="step" id="stFund"><div class="dot" id="tdFund">2</div><div>위 주소로 SOL 입금 (0.05 SOL 정도로 시작)</div></div>
-      <div class="step" id="stSim"><div class="dot" id="tdSim">3</div><div>토큰 페이지에서 DX 배지로 simulate 해보기</div></div>
+      <div class="step" id="stSim"><div class="dot" id="tdSim">3</div><div>토큰 페이지에서 Tradeasy 배지로 simulate 해보기</div></div>
     </div>
   </div>
 
@@ -372,6 +372,7 @@
         <div class="field"><label>CU limit</label><input id="cuLimit" type="number" step="10000" min="50000"></div>
         <label class="check"><input id="ignoreMev" type="checkbox">터미널 MEV 설정 무시</label>
         <div class="field"><label>RPC URL 직접 지정 (비우면 Helius)</label><input id="customRpcUrl" placeholder="https://..." spellcheck="false"></div>
+        <div class="field"><label>Jupiter API key (선택)<span class="saved" data-saved="jupiterApiKey">저장됨</span></label><input id="jupiterApiKey" placeholder="비우면 키 없이 사용" spellcheck="false"><div class="dim small">SOL이 아닌 페어 코인 거래에 사용</div></div>
       </div>
     </details>
     <div class="msg" id="sMsg"></div>
@@ -385,7 +386,7 @@
     <div class="stack sub hidden" id="lkOn">
       <ul class="bullets small mut">
         <li>Phantom, MetaMask의 잠금 비밀번호와 같은 기능입니다.</li>
-        <li>브라우저를 다시 열거나 자동 잠금 시간이 지나면 비밀번호를 묻고, 잠긴 동안에는 DX 버튼으로 거래할 수 없습니다.</li>
+        <li>브라우저를 다시 열거나 자동 잠금 시간이 지나면 비밀번호를 묻고, 잠긴 동안에는 Tradeasy 버튼으로 거래할 수 없습니다.</li>
         <li>private key를 이 비밀번호로 암호화합니다. 잊으면 찾을 수 없습니다.</li>
       </ul>
       <div class="grid2">

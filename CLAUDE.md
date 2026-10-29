@@ -1,24 +1,24 @@
-# Tradeasy (DX Trader)
+# Tradeasy
 
-Chrome MV3 extension for Solana trading terminals (Axiom, GMGN). The user keeps using the terminal's UI and presets; DX builds, signs and sends the trade itself from a hot wallet inside the extension via Helius Sender, so the terminal fee (~1%) is not charged. No server, BYOK (one Helius API key for RPC + Sender). UI text is Korean; code and comments are English. The UI name is "DX Trader".
+Chrome MV3 extension for Solana trading terminals (Axiom, GMGN). The user keeps using the terminal's UI and presets; Tradeasy builds, signs and sends the trade itself from a hot wallet inside the extension via Helius Sender, so the terminal fee (~1%) is not charged. Internal names use the prefix `te` (CSS classes `te-*`, `teMode_axiom`, message tag `__TRADEASY__`). No server, BYOK (one Helius API key for RPC + Sender). UI text is Korean; code and comments are English.
 
 ## Principles (do not break)
 
-- **Never send a fee-paying terminal trade silently.** On Axiom (DX mode) every trade press is either executed by DX or blocked with a toast, also in orphaned tabs. Only trusted events (`isTrusted`) act.
-- **Don't break the terminal.** Our UI lives in `#dx-layer` (overlay). Never block or modify the terminal's network traffic or workers (blocking Axiom's SharedWorker crashed the site). Interception is limited to user input events on trade controls.
+- **Never send a fee-paying terminal trade silently.** On Axiom (Tradeasy mode) every trade press is either executed by Tradeasy or blocked with a toast, also in orphaned tabs. Only trusted events (`isTrusted`) act.
+- **Don't break the terminal.** Our UI lives in `#te-layer` (overlay). Never block or modify the terminal's network traffic or workers (blocking Axiom's SharedWorker crashed the site). Interception is limited to user input events on trade controls.
 - **Terminal data first** (presets, pool hints, blockhash feed, token meta); RPC only for prefetch, simulate, confirm.
-- **Zero RPC at click time.** State is prefetched and served from the RPC cache (`market.js`, `cacheConnection`). e2e asserts this.
+- **Zero RPC at click time.** State is prefetched and served from the RPC cache (`market.js`, `cacheConnection`). e2e asserts this. The one exception is a Jupiter-routed coin (non-SOL pair): one HTTPS call to Jupiter `/build` at click time.
 - **Verify before signing** (`trade.js` `verify`): program allowlist, SOL transfers only to Sender tip accounts or the own WSOL ATA, outflow cap. Pool addresses from the page are hints, verified on-chain (owner program, mint, SOL quote).
 - **Simulate by default.** Live mode needs explicit confirmation in the popup.
-- Venue SDKs directly, no aggregator. Every venue is detected, never assumed.
+- Venue SDKs directly for SOL pairs; every venue is detected, never assumed. Coins paired with another token go through Jupiter `/build` (instructions only, no Jupiter fee). Never call a terminal's own router program.
 
 ## Architecture
 
 ```
 terminal page
   hook.js (MAIN world)      taps fetch/XHR/SharedWorker, reads React fibers, draws chart line
-     │  window.postMessage({ __DX__: true, kind, payload })
-  content.js (isolated)     site adapter, DX mode interception, badge/popover/toasts
+     │  window.postMessage({ __TRADEASY__: true, kind, payload })
+  content.js (isolated)     site adapter, Tradeasy mode interception, badge/popover/toasts
      │  chrome.runtime.sendMessage
 background (service worker) router, state cache, build/verify/sign/send/confirm, positions
      │
@@ -36,11 +36,12 @@ background (service worker) router, state cache, build/verify/sign/send/confirm,
 |---|---|
 | `build.mjs` | esbuild bundle of the background, copies static files, writes `dist/manifest.json`. Version lives here (and in `package.json`). |
 | `src/hook.js` | MAIN world, `document_start`. Network/worker taps, fiber reads (`pairInfo.tokenAddress` of one-click rows), TradingView line. |
-| `src/content.js` | `ADAPTERS.axiom/gmgn` (URL mint regex, main button detection, preset parsing), DX mode (`classify`/`handle`, covers, chip fill), toasts, avg-line poll. Retires itself when the extension context is invalidated. |
+| `src/content.js` | `ADAPTERS.axiom/gmgn` (URL mint regex, main button detection, preset parsing), Tradeasy mode (`classify`/`handle`, covers, chip fill), toasts, avg-line poll. Retires itself when the extension context is invalidated. |
 | `src/background/index.js` | Message router, per-tab watch map, periodic refresh + blockhash prefetch, trade log (20 trades, confirm merged into its send entry). |
 | `market.js` | Caching connections, `refresh(mint, user, hint)` venue detection + state load, `summary()`. |
 | `trade.js` | `buildIxs` (swap ixs per venue, compute budget, tip, verify), `execute` (simulate or Sender), `confirm`. |
 | `meteora.js` / `raydium.js` | DAMM v2 + DBC / LaunchLab + CPMM load, quote, build. Pure after load. |
+| `jupiter.js` | `buildJupiter`: GET `api.jup.ag/swap/v2/build` → setup/other/swap/cleanup instructions + lookup tables (built from `addressesByLookupTableAddress`, no RPC). |
 | `quote.js` | Pure quotes from cached state: popover preview, liquidation value, spot price. |
 | `positions.js` | Per-mint PnL from confirmed live txs (balance deltas via jsonParsed `getTransaction`). |
 | `accounts.js` | Zero-balance token accounts (Token + Token-2022): scan, close in batches of 20 (separate txs, plain RPC). |
@@ -58,7 +59,7 @@ background (service worker) router, state cache, build/verify/sign/send/confirm,
 3. Background: `buildIxs` from cached state → `verify` → sign → `simulateTransaction` (simulate mode) or Sender (live).
 4. Live: reply immediately, then `confirm` (signature status polling, or the Axiom feed) → slots to land → `positions.deltas` → `positions.record` → `confirm` message to the tab (fill price, average price).
 
-**Fees:** priority total = `preset.priorityFeeSol` (CU price = total / CU limit); Sender tip = `preset.bribeFeeSol`, at least 0.000005. A tip of 0.001 or more uses all Sender paths, below that `swqos_only=true`. `mev-protect` follows the preset unless `ignoreMev`. Axiom spends the same priority + bribe (as a tip transfer plus network fee), so the fixed cost is equal and DX saves the terminal fee.
+**Fees:** priority total = `preset.priorityFeeSol` (CU price = total / CU limit); Sender tip = `preset.bribeFeeSol`, at least 0.000005. A tip of 0.001 or more uses all Sender paths, below that `swqos_only=true`. `mev-protect` follows the preset unless `ignoreMev`. Axiom spends the same priority + bribe (as a tip transfer plus network fee), so the fixed cost is equal and Tradeasy saves the terminal fee.
 
 **Buys spend exactly the chosen SOL:** pump `buy_exact_sol_in`, PumpSwap `buy_exact_quote_in`, min out = quote × (1 − slippage). `toExactIn` rewrites the SDK's exact-out `buy` (same accounts and arg layout; only the discriminator and the two amounts differ). Verified with mainnet `simulateTransaction`. Raydium/Meteora builders are exact-in already.
 
@@ -70,7 +71,9 @@ Detection order in `market.refresh`:
 2. A protocol hint naming Raydium/LaunchLab without a pool → LaunchLab PDA `["pool", mintA, WSOL]`.
 3. pump.fun bonding curve from the mint, then PumpSwap (hinted pool, then canonical pool; reversed pools with base = WSOL are supported).
 
-SOL-quoted only. pump.fun also has non-SOL quote curves (e.g. PUMP-quoted): rejected with the quote mint in the error. Axiom trades these in one tx through its own router program (`FLASHX…`), e.g. PumpSwap token→HYPE then Orca Whirlpool HYPE→SOL. The SDK's `multiHopSwapInstructions` is the likely path if this is added. Not supported: Raydium AMM v4 (incl. LaunchLab coins that graduate there), CLMM, Meteora DLMM.
+Non-SOL pairs (pump.fun now launches coins quoted in PUMP, HYPE, USDC, BTC, ...): any venue that reports `only SOL-quoted/paired ... (quote <mint>)` makes `refresh` fall back to a `jupiter` state (token balance + quote mint only). `trade.js` then asks Jupiter for the route at click time (exact in, slippage from the preset, `maxAccounts` 48, retried with 28 if the tx is over 1232 bytes), replaces Jupiter's compute budget with ours (CU limit 400k; the priority total stays the preset value) and adds the Sender tip. No local quote for these: no popover preview, no "지금 팔면" value, no chart line. For reference, Axiom/GMGN route these through their own upgradeable router programs (`FLASHX…`, `GMGNre…`); GMGN adds its 1% as a separate transfer, Axiom inside the program.
+
+Not supported directly (and not routed): Raydium AMM v4 (incl. LaunchLab coins that graduate there), CLMM, Meteora DLMM.
 
 ## Terminal data sources
 
@@ -88,14 +91,14 @@ SOL-quoted only. pump.fun also has non-SOL quote curves (e.g. PUMP-quoted): reje
 
 ## Storage
 
-- `chrome.storage.local`: config keys (`config.js` `DEFAULTS`), `vault`, `onboard`, `trades`, `positions`, `dxMode_axiom`.
+- `chrome.storage.local`: config keys (`config.js` `DEFAULTS`), `vault`, `onboard`, `trades`, `positions`, `teMode_axiom` (was `dxMode_axiom` before v0.22; migrated on start).
 - `chrome.storage.session`: `sk` (unlocked key while the lock is on).
 
 ## Chart line
 
-hook.js draws the DX average buy price on Axiom's TradingView chart: same-origin blob iframe → `contentWindow.tradingViewApi.activeChart()` → `createShape(horizontal_line, { disableSave, lock })`. `createPositionLine` is not available (Trading Platform only).
+hook.js draws the Tradeasy average buy price on Axiom's TradingView chart: same-origin blob iframe → `contentWindow.tradingViewApi.activeChart()` → `createShape(horizontal_line, { disableSave, lock })`. `createPositionLine` is not available (Trading Platform only).
 
-Level = avg SOL price × (chart close / DX mid price), median-smoothed, so it works whether the chart shows MC or price, in USD or SOL. Data comes from the background `avgline` message (positions + `quote.spotPrice`).
+Level = avg SOL price × (chart close / Tradeasy mid price), median-smoothed, so it works whether the chart shows MC or price, in USD or SOL. Data comes from the background `avgline` message (positions + `quote.spotPrice`).
 
 ## Commands
 
@@ -120,6 +123,7 @@ Release: bump the version in `build.mjs` and `package.json`, build, run both e2e
   - LaunchLab status: 0 trading, 1 complete (migration pending), 2 migrated.
   - CPMM reserves = vault balance − protocol/fund/creator fees. The creator fee applies only if `enableCreatorFee`, on the input side per `feeOn` (0 both, 1 token0, 2 token1).
 - **Slippage errors:** pump `TooMuchSolRequired`/`TooLittleSolReceived`; exact-in buys `BuySlippageBelowMin*`; PumpSwap `ExceededSlippage`.
+- **Jupiter:** keyless 0.5 req/s (optional key in settings > 고급 > `jupiterApiKey`, 1 req/s). `/build` has no Jupiter swap fee (`/order` does: do not use it). Slippage failure is Jupiter error 6001. Host permission `https://api.jup.ag/*`.
 - **Sender:** `skipPreflight`, `maxRetries: 0`; the same signed tx is re-sent every 300 ms up to 3 times (~1 s) until its signature is seen (`trade.js` `rebroadcast`). Same signature, so it lands at most once; min-out still bounds the price. Free plan: Sender 50 req/s and 0 credits; RPC 10 req/s and 1M credits/month (page watching dominates usage).
 - **Orphaned tabs:** after reloading the extension, open terminal tabs are orphaned until refreshed (content shows a toast; the popup offers a tab refresh).
-- **Wallet sharing:** DX and the user's Axiom wallet can be the same key, so Axiom's UI also shows DX trades.
+- **Wallet sharing:** Tradeasy and the user's Axiom wallet can be the same key, so Axiom's UI also shows Tradeasy trades.

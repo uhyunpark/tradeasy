@@ -48,7 +48,7 @@ export async function loadLaunchLab(conn, poolKey, mint, user) {
   if (!info || !info.owner.equals(LAUNCHLAB_PROGRAM)) throw new Error('LaunchLab pool not found');
   const pool = LaunchpadPool.decode(info.data);
   if (!pool.mintA.equals(mint)) throw new Error('LaunchLab pool mint mismatch');
-  if (!pool.mintB.equals(NATIVE_MINT)) throw new Error('only SOL-quoted LaunchLab curves are supported');
+  if (!pool.mintB.equals(NATIVE_MINT)) throw new Error(`only SOL-quoted LaunchLab curves are supported (quote ${pool.mintB.toBase58()})`);
   const [cfgInfo, platInfo] = await conn.getMultipleAccountsInfo([pool.configId, pool.platformId]);
   if (!cfgInfo || !platInfo) throw new Error('LaunchLab config not found');
   const config = LaunchpadConfig.decode(cfgInfo.data);
@@ -118,7 +118,7 @@ export async function loadCpmm(conn, poolKey, mint, user) {
   const pool = CpmmPoolInfoLayout.decode(info.data);
   const tokenIsA = pool.mintA.equals(mint);
   if (!tokenIsA && !pool.mintB.equals(mint)) throw new Error('CPMM pool does not contain this token');
-  if (!(tokenIsA ? pool.mintB : pool.mintA).equals(NATIVE_MINT)) throw new Error('only SOL-paired CPMM pools are supported');
+  if (!(tokenIsA ? pool.mintB : pool.mintA).equals(NATIVE_MINT)) throw new Error(`only SOL-paired CPMM pools are supported (quote ${(tokenIsA ? pool.mintB : pool.mintA).toBase58()})`);
   const [cfgInfo, vA, vB] = await conn.getMultipleAccountsInfo([pool.configId, pool.vaultA, pool.vaultB]);
   if (!cfgInfo || !vA || !vB) throw new Error('CPMM pool accounts not found');
   const amount = (key, acc, program) => new BN(unpackAccount(key, acc, program).amount.toString());

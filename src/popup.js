@@ -97,13 +97,13 @@ async function renderSite() {
   $('siteStatus').classList.toggle('on', on);
   if (cur) { $('siteIcon').src = chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(cur.url)}&size=32`); show('siteIcon', true); }
   else show('siteIcon', false);
-  const dxSite = cur && cur.name === 'Axiom'; // sites where the terminal's own buttons are executed by DX
-  show('dxSwitchWrap', !!dxSite);
-  if (dxSite) { const { dxMode_axiom: m } = await chrome.storage.local.get('dxMode_axiom'); $('dxSwitch').checked = m !== false; }
+  const teSite = cur && cur.name === 'Axiom'; // sites where the terminal's own buttons are executed by Tradeasy
+  show('teSwitchWrap', !!teSite);
+  if (teSite) { const { teMode_axiom: m } = await chrome.storage.local.get('teMode_axiom'); $('teSwitch').checked = m !== false; }
   $('siteText').textContent = !cur ? '지원 사이트가 아닙니다' : cur.ok ? `${cur.name}에서 동작 중` : `${cur.name}는 아직 지원하지 않습니다`;
 }
 
-$('dxSwitch').addEventListener('change', () => chrome.storage.local.set({ dxMode_axiom: $('dxSwitch').checked }));
+$('teSwitch').addEventListener('change', () => chrome.storage.local.set({ teMode_axiom: $('teSwitch').checked }));
 
 // ---------- onboarding: 1 wallet ----------
 $('chCreate').onclick = async () => {
@@ -237,12 +237,12 @@ async function renderHome() {
   let activeTab = null;
   try { [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true }); } catch (_) {}
   const w = Array.isArray(list) && (list.find((x) => activeTab && x.tabId === activeTab.id) || null);
-  const POOL = { pump: 'pump.fun', pumpswap: 'PumpSwap', meteora_dbc: 'Meteora DBC', meteora_damm_v2: 'Meteora DAMM v2', raydium_launchlab: 'Raydium LaunchLab', raydium_cpmm: 'Raydium CPMM' };
+  const POOL = { pump: 'pump.fun', pumpswap: 'PumpSwap', meteora_dbc: 'Meteora DBC', meteora_damm_v2: 'Meteora DAMM v2', raydium_launchlab: 'Raydium LaunchLab', raydium_cpmm: 'Raydium CPMM', jupiter: 'Jupiter 경유' };
   const onTokenPage = activeTab && activeTab.url && /^https:\/\/(?:[\w-]+\.)?(?:axiom\.trade\/(?:token|meme)|gmgn\.ai\/sol\/token)\//.test(activeTab.url);
   const tokState = (text, cls = '') => { $('tokState').textContent = text || ''; $('tokState').className = 'pill ' + cls; show('tokState', !!text); };
   if (!w && onTokenPage) {
     tokState('연결 안 됨', 'warnpill');
-    $('tokBody').innerHTML = '<div class="small mut" style="margin-bottom:8px">이 탭은 DX가 설치(업데이트)되기 전에 열려서 아직 연결되지 않았습니다.</div><button class="btn sm" id="btnReloadTab">탭 새로고침</button>';
+    $('tokBody').innerHTML = '<div class="small mut" style="margin-bottom:8px">이 탭은 Tradeasy가 설치(업데이트)되기 전에 열려서 아직 연결되지 않았습니다.</div><button class="btn sm" id="btnReloadTab">탭 새로고침</button>';
     $('btnReloadTab').onclick = () => { chrome.tabs.reload(activeTab.id); $('tokBody').textContent = '새로고침 중...'; };
   } else if (!w) {
     tokState('');
@@ -256,7 +256,7 @@ async function renderHome() {
     const img = `<div class="tokimg">${esc((m.symbol || m.name || '?').slice(0, 2).toUpperCase())}${m.image ? `<img src="${esc(m.image)}" alt="" referrerpolicy="no-referrer">` : ''}</div>`;
     let html = `<div class="tok">${img}<div style="min-width:0;flex:1"><div class="tokhead"><span class="tokname">${esc(title)}</span>${m.symbol && m.name ? `<span class="ticker">$${esc(m.symbol)}</span>` : ''}</div>` +
       `<div class="tokaddr"><span>${esc(w.mint.slice(0, 6) + '…' + w.mint.slice(-6))}</span>${COPY_BTN(`data-copy="${esc(w.mint)}"`)}</div></div></div>`;
-    if (hasKey && unsupported) html += '<div class="small mut">DX가 아직 지원하지 않는 풀입니다 (Raydium AMM v4·CLMM, Meteora DLMM 등). 지원: pump.fun, PumpSwap, Meteora DBC·DAMM v2, Raydium LaunchLab·CPMM</div>';
+    if (hasKey && unsupported) html += '<div class="small mut">Tradeasy가 아직 지원하지 않는 풀입니다 (Raydium AMM v4·CLMM, Meteora DLMM 등). 지원: pump.fun, PumpSwap, Meteora DBC·DAMM v2, Raydium LaunchLab·CPMM</div>';
     else if (hasKey && w.error && !s) html += `<div class="${unsupported ? 'warn' : 'bad'} small">${esc(w.friendly || w.error)}</div>`;
     if (s) html += `<dl class="kv"><dt>보유</dt><dd>${Number(s.tokenBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}${m.symbol ? ' ' + esc(m.symbol) : ''}</dd>` +
       `<dt>풀</dt><dd>${esc(POOL[s.venue] || s.venue)}</dd><dt>갱신</dt><dd>${ago(s.at)}</dd></dl>`;
@@ -267,7 +267,7 @@ async function renderHome() {
       const sign = P.pnl > 0 ? '+' : '';
       html += `<dl class="kv pos">` + (P.avgPrice ? `<dt>평균 매수가</dt><dd>${fmtPrice(P.avgPrice)} SOL</dd>` : '') + `<dt>투입</dt><dd>${sol(P.invested)}</dd>` + (P.returned > 0 ? `<dt>회수</dt><dd>${sol(P.returned)}</dd>` : '') +
         `<dt>지금 팔면</dt><dd>${sol(P.value)}</dd><dt>손익</dt><dd class="${cls}">${P.pnl == null ? '-' : `${sign}${P.pnl.toFixed(4)} SOL (${sign}${P.pnlPct.toFixed(1)}%)`}</dd></dl>` +
-        '<div class="dim small" style="margin-top:4px">DX 지갑 LIVE 체결 기준</div>';
+        '<div class="dim small" style="margin-top:4px">Tradeasy 지갑 LIVE 체결 기준</div>';
     }
     $('tokBody').innerHTML = html;
   }
@@ -342,7 +342,7 @@ $('sendAmt').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnS
 $('btnSendClose').onclick = () => { tab = 'home'; refresh(); };
 
 // ---------- settings ----------
-const FIELDS = ['customRpcUrl', 'maxSolPerTrade', 'cuLimit', 'autoLockMin', 'autoSlippage', 'autoPriorityFeeSol', 'autoTipSol'];
+const FIELDS = ['customRpcUrl', 'jupiterApiKey', 'maxSolPerTrade', 'cuLimit', 'autoLockMin', 'autoSlippage', 'autoPriorityFeeSol', 'autoTipSol'];
 let settingsOpened = false;
 function renderSettings() {
   for (const k of FIELDS) if (document.activeElement !== $(k)) $(k).value = C[k] ?? '';

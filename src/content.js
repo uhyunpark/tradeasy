@@ -1,9 +1,9 @@
-// DX - content script (isolated world) on supported terminals (Axiom, GMGN).
+// Tradeasy - content script (isolated world) on supported terminals (Axiom, GMGN).
 // Bridges the MAIN-world hook to the background, reads the terminal's presets from
-// localStorage, and renders the DX badge / popover / toasts in its own overlay layer
+// localStorage, and renders the Tradeasy badge / popover / toasts in its own overlay layer
 // (never inside the terminal's React DOM).
 (() => {
-  const TAG = '__DX__';
+  const TAG = '__TRADEASY__';
   // After the extension is updated or reloaded, this script keeps running in already-open
   // tabs but can no longer talk to the background ("orphaned"). Detect that and retire.
   const timers = [];
@@ -22,14 +22,14 @@
 
   // ---------- site adapters ----------
   // Each adapter maps a terminal's URL, presets and main action button to one shape.
-  // Preset fields left null ("auto" on the terminal) are filled by DX defaults in the background.
+  // Preset fields left null ("auto" on the terminal) are filled by Tradeasy defaults in the background.
   const ADAPTERS = {
     axiom: {
       name: 'Axiom',
       mintRe: new RegExp(`/(?:token|meme)/(${B58})`),
       // market button of the trade panel: "Buy TOKEN" / "Sell TOKEN" (not list quick buys like "Buy 0.03 SOL")
       mainSide(text, r) { const m = /^(Buy|Sell)\s+\S/.exec(text); return m && !QUICK_RE.test(text) && r.width >= 140 && r.height >= 24 ? m[1].toLowerCase() : null; },
-      intercept: true, // DX mode: the terminal's own buttons are executed by DX
+      intercept: true, // Tradeasy mode: the terminal's own buttons are executed by Tradeasy
       readSettings() {
         const s = json('settings');
         if (!s || !s.solPresets) return null;
@@ -175,73 +175,73 @@
 
   // ---------- UI: overlay layer ----------
   const css = `
-  #dx-layer{position:fixed;inset:0;pointer-events:none;z-index:2147483646;font:12px/1.4 ui-sans-serif,system-ui,sans-serif}
-  .dx-badge{position:fixed;z-index:2;pointer-events:auto;display:inline-flex;align-items:center;gap:4px;padding:1px 7px;font-size:10px;font-weight:700;
+  #te-layer{position:fixed;inset:0;pointer-events:none;z-index:2147483646;font:12px/1.4 ui-sans-serif,system-ui,sans-serif}
+  .te-badge{position:fixed;z-index:2;pointer-events:auto;display:inline-flex;align-items:center;gap:4px;padding:1px 7px;font-size:10px;font-weight:700;
     letter-spacing:.4px;color:#fff;background:#2563eb;border-radius:4px;cursor:pointer;user-select:none;box-shadow:0 0 0 2px #0b0d12}
-  .dx-badge.sim{background:#7c3aed}
-  .dx-badge.off{background:#4b5563;color:#e5e7eb}
-  .dx-badge.tg{gap:5px;padding:2px 4px 2px 7px;border-radius:999px;font-size:10px;box-shadow:none}
-  .dx-badge.tg .sw{position:relative;width:20px;height:12px;border-radius:999px;background:rgba(255,255,255,.35);flex:0 0 20px;transition:background .15s}
-  .dx-badge.tg .sw::after{content:'';position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:#fff;transition:transform .15s}
-  .dx-badge.tg:not(.off) .sw{background:rgba(255,255,255,.55)}
-  .dx-badge.tg:not(.off) .sw::after{transform:translateX(8px)}
-  .dx-badge.tg.off .sw{background:#2b313c}.dx-badge.tg.off .sw::after{background:#9ca3af}
-  .dx-badge.tg:hover{filter:brightness(1.15)}
-  .dx-cover *{color:#fff !important}
-  .dx-cover{position:fixed;z-index:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+  .te-badge.sim{background:#7c3aed}
+  .te-badge.off{background:#4b5563;color:#e5e7eb}
+  .te-badge.tg{gap:5px;padding:2px 4px 2px 7px;border-radius:999px;font-size:10px;box-shadow:none}
+  .te-badge.tg .sw{position:relative;width:20px;height:12px;border-radius:999px;background:rgba(255,255,255,.35);flex:0 0 20px;transition:background .15s}
+  .te-badge.tg .sw::after{content:'';position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:#fff;transition:transform .15s}
+  .te-badge.tg:not(.off) .sw{background:rgba(255,255,255,.55)}
+  .te-badge.tg:not(.off) .sw::after{transform:translateX(8px)}
+  .te-badge.tg.off .sw{background:#2b313c}.te-badge.tg.off .sw::after{background:#9ca3af}
+  .te-badge.tg:hover{filter:brightness(1.15)}
+  .te-cover *{color:#fff !important}
+  .te-cover{position:fixed;z-index:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;box-sizing:border-box;
     cursor:pointer;user-select:none;color:#fff;white-space:nowrap;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.35);
     background:linear-gradient(100deg,#1d4ed8 0%,#2563eb 35%,#06b6d4 100%);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 0 12px rgba(37,99,235,.75),0 0 26px rgba(6,182,212,.45);
-    animation:dxglow 2.4s ease-in-out infinite;transition:filter .12s,transform .06s}
-  .dx-cover.sim{background:linear-gradient(100deg,#6d28d9 0%,#7c3aed 35%,#db2777 100%);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 0 12px rgba(124,58,237,.8),0 0 26px rgba(219,39,119,.45);animation-name:dxglowsim}
-  .dx-cover:hover{filter:brightness(1.12)}.dx-cover:active{transform:scale(.985)}
-  .dx-cover.busy{opacity:.7;cursor:progress;animation:none}
-  @keyframes dxglow{50%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 0 18px rgba(37,99,235,.95),0 0 36px rgba(6,182,212,.6)}}
-  @keyframes dxglowsim{50%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 0 18px rgba(124,58,237,1),0 0 36px rgba(219,39,119,.6)}}
-  .dx-pop{position:fixed;pointer-events:auto;width:284px;box-sizing:border-box;background:#0f1115;color:#e6e6e6;border:1px solid #2b3140;border-radius:10px;
+    animation:teglow 2.4s ease-in-out infinite;transition:filter .12s,transform .06s}
+  .te-cover.sim{background:linear-gradient(100deg,#6d28d9 0%,#7c3aed 35%,#db2777 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 0 12px rgba(124,58,237,.8),0 0 26px rgba(219,39,119,.45);animation-name:teglowsim}
+  .te-cover:hover{filter:brightness(1.12)}.te-cover:active{transform:scale(.985)}
+  .te-cover.busy{opacity:.7;cursor:progress;animation:none}
+  @keyframes teglow{50%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 0 18px rgba(37,99,235,.95),0 0 36px rgba(6,182,212,.6)}}
+  @keyframes teglowsim{50%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 0 18px rgba(124,58,237,1),0 0 36px rgba(219,39,119,.6)}}
+  .te-pop{position:fixed;pointer-events:auto;width:284px;box-sizing:border-box;background:#0f1115;color:#e6e6e6;border:1px solid #2b3140;border-radius:10px;
     padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.6)}
-  .dx-pop h4{margin:0 0 6px;font-size:12px;display:flex;justify-content:space-between;align-items:center}
-  .dx-pop .mut{color:#8b93a1;font-size:11px}
-  .dx-pop .warn{color:#fbbf24;font-size:11px;margin-top:4px}
-  .dx-pop *{box-sizing:border-box}
-  .dx-pop .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:6px}
-  .dx-pop button{background:#1f2937;color:#e6e6e6;border:1px solid #2b3140;border-radius:6px;padding:5px 6px;cursor:pointer;font:inherit;text-align:left;line-height:1.3;min-width:0}
-  .dx-pop button b{display:block;font-size:12px}
-  .dx-pop button small{display:block;font-size:10px;color:#9aa3b2;min-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .dx-pop button small .hi{color:#fbbf24}.dx-pop button small .vhi{color:#f87171}
-  .dx-pop button.main{grid-column:1/-1;background:#1d4ed8;border-color:#1d4ed8;color:#fff}
-  .dx-pop button.main small{color:#dbeafe}
-  .dx-pop button.sell{background:#3f1515;border-color:#5b1d1d}
-  .dx-pop button:hover:not(:disabled){border-color:#60a5fa}
-  .dx-pop button:disabled{opacity:.5;cursor:default}
-  .dx-tag{display:inline-block;padding:0 5px;border-radius:3px;font-size:10px;font-weight:700;margin-left:4px}
-  .dx-tag.sim{background:#3b0764;color:#d8b4fe}.dx-tag.live{background:#7f1d1d;color:#fecaca}
-  .dx-toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;width:330px}
-  .dx-toast{display:flex;gap:10px;align-items:flex-start;background:#161a22;color:#eef1f6;border:1px solid #2c3240;border-radius:12px;padding:12px 12px 12px 14px;
+  .te-pop h4{margin:0 0 6px;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+  .te-pop .mut{color:#8b93a1;font-size:11px}
+  .te-pop .warn{color:#fbbf24;font-size:11px;margin-top:4px}
+  .te-pop *{box-sizing:border-box}
+  .te-pop .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:6px}
+  .te-pop button{background:#1f2937;color:#e6e6e6;border:1px solid #2b3140;border-radius:6px;padding:5px 6px;cursor:pointer;font:inherit;text-align:left;line-height:1.3;min-width:0}
+  .te-pop button b{display:block;font-size:12px}
+  .te-pop button small{display:block;font-size:10px;color:#9aa3b2;min-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .te-pop button small .hi{color:#fbbf24}.te-pop button small .vhi{color:#f87171}
+  .te-pop button.main{grid-column:1/-1;background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+  .te-pop button.main small{color:#dbeafe}
+  .te-pop button.sell{background:#3f1515;border-color:#5b1d1d}
+  .te-pop button:hover:not(:disabled){border-color:#60a5fa}
+  .te-pop button:disabled{opacity:.5;cursor:default}
+  .te-tag{display:inline-block;padding:0 5px;border-radius:3px;font-size:10px;font-weight:700;margin-left:4px}
+  .te-tag.sim{background:#3b0764;color:#d8b4fe}.te-tag.live{background:#7f1d1d;color:#fecaca}
+  .te-toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;width:330px}
+  .te-toast{display:flex;gap:10px;align-items:flex-start;background:#161a22;color:#eef1f6;border:1px solid #2c3240;border-radius:12px;padding:12px 12px 12px 14px;
     box-shadow:0 10px 28px rgba(0,0,0,.55);font:13px/1.45 ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;max-height:50vh;overflow:auto}
-  .dx-toast .ic{flex:0 0 22px;height:22px;border-radius:50%;display:grid;place-items:center;margin-top:1px;background:#2a3040;color:#cbd2de}
-  .dx-toast .ic svg{width:13px;height:13px}
-  .dx-toast.ok .ic{background:#0f3d2c;color:#34d399}.dx-toast.err .ic{background:#4a1717;color:#f87171}
-  .dx-toast .ic.spin{border:2px solid #3a4152;border-top-color:#93c5fd;background:transparent;animation:dxspin .8s linear infinite;box-sizing:border-box}
-  @keyframes dxspin{to{transform:rotate(360deg)}}
-  .dx-toast .bd{flex:1;min-width:0;word-break:break-word}
-  .dx-toast .t{font-weight:700;font-size:14px;margin-bottom:2px}
-  .dx-toast .m{font-size:13px;color:#e6e9ef}
-  .dx-toast .sub{color:#9aa3b2;font-size:12px;margin-top:2px}
-  .dx-toast .lk{margin-top:4px;font-size:12px}
-  .dx-toast details{margin-top:6px;color:#9aa3b2;font-size:11px}
-  .dx-toast details summary{cursor:pointer;list-style:none;color:#93c5fd}
-  .dx-toast details pre{margin:4px 0 0;font:10px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all}
-  .dx-toast a{color:#93c5fd;text-decoration:none}
-  .dx-toast .x{flex:0 0 20px;height:20px;border:0;background:transparent;color:#7d8596;cursor:pointer;padding:0;display:grid;place-items:center;border-radius:6px}
-  .dx-toast .x:hover{background:#262b36;color:#e6e9ef}.dx-toast .x svg{width:12px;height:12px}`;
+  .te-toast .ic{flex:0 0 22px;height:22px;border-radius:50%;display:grid;place-items:center;margin-top:1px;background:#2a3040;color:#cbd2de}
+  .te-toast .ic svg{width:13px;height:13px}
+  .te-toast.ok .ic{background:#0f3d2c;color:#34d399}.te-toast.err .ic{background:#4a1717;color:#f87171}
+  .te-toast .ic.spin{border:2px solid #3a4152;border-top-color:#93c5fd;background:transparent;animation:tespin .8s linear infinite;box-sizing:border-box}
+  @keyframes tespin{to{transform:rotate(360deg)}}
+  .te-toast .bd{flex:1;min-width:0;word-break:break-word}
+  .te-toast .t{font-weight:700;font-size:14px;margin-bottom:2px}
+  .te-toast .m{font-size:13px;color:#e6e9ef}
+  .te-toast .sub{color:#9aa3b2;font-size:12px;margin-top:2px}
+  .te-toast .lk{margin-top:4px;font-size:12px}
+  .te-toast details{margin-top:6px;color:#9aa3b2;font-size:11px}
+  .te-toast details summary{cursor:pointer;list-style:none;color:#93c5fd}
+  .te-toast details pre{margin:4px 0 0;font:10px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all}
+  .te-toast a{color:#93c5fd;text-decoration:none}
+  .te-toast .x{flex:0 0 20px;height:20px;border:0;background:transparent;color:#7d8596;cursor:pointer;padding:0;display:grid;place-items:center;border-radius:6px}
+  .te-toast .x:hover{background:#262b36;color:#e6e9ef}.te-toast .x svg{width:12px;height:12px}`;
   let layer = null, toasts = null;
   function getLayer() {
     if (layer && layer.isConnected) return layer;
-    layer = document.createElement('div'); layer.id = 'dx-layer';
+    layer = document.createElement('div'); layer.id = 'te-layer';
     const st = document.createElement('style'); st.textContent = css; layer.appendChild(st);
-    toasts = document.createElement('div'); toasts.className = 'dx-toasts'; layer.appendChild(toasts);
+    toasts = document.createElement('div'); toasts.className = 'te-toasts'; layer.appendChild(toasts);
     document.documentElement.appendChild(layer);
     return layer;
   }
@@ -251,7 +251,7 @@
   // kind: 'ok' | 'err' | '' (pending: spinner)
   function toast(text, kind = '', html = false, ttl = 12_000) {
     getLayer();
-    const t = document.createElement('div'); t.className = 'dx-toast ' + kind;
+    const t = document.createElement('div'); t.className = 'te-toast ' + kind;
     const ic = document.createElement('div'); ic.className = 'ic' + (kind ? '' : ' spin'); ic.innerHTML = ICONS[kind] || '';
     const body = document.createElement('div'); body.className = 'bd';
     if (html) body.innerHTML = text; else body.textContent = text;
@@ -301,7 +301,7 @@
     busy = false; place();
     pending.parentElement.remove();
     if (!r || r.error) {
-      toast(card(`${label} 실패`, (r && r.friendly) || (r ? r.error : 'DX 응답 없음')) + (r && r.friendly ? details([r.error]) : ''), 'err', true, 20_000);
+      toast(card(`${label} 실패`, (r && r.friendly) || (r ? r.error : 'Tradeasy 응답 없음')) + (r && r.friendly ? details([r.error]) : ''), 'err', true, 20_000);
       return;
     }
     const x = r.result;
@@ -348,7 +348,7 @@
   async function openPop(btn, badge, side) {
     closePop();
     getLayer();
-    pop = document.createElement('div'); pop.className = 'dx-pop';
+    pop = document.createElement('div'); pop.className = 'te-pop';
     const r = badge.getBoundingClientRect();
     pop.style.left = Math.max(8, Math.min(innerWidth - 292, r.right - 284)) + 'px';
     // above the badge when there is room, otherwise below it (never covering the badge)
@@ -363,17 +363,17 @@
     const mode = info && info.mode === 'live' ? 'live' : 'sim';
     const st = info && info.state;
     const sym = (metaByMint.get(mint) || {}).symbol || '토큰';
-    const head = `<h4><span>DX ${side === 'buy' ? '매수' : '매도'}<span class="dx-tag ${mode}">${mode === 'live' ? 'LIVE' : '시뮬레이션'}</span></span><span class="mut" data-x style="cursor:pointer">닫기</span></h4>`;
+    const head = `<h4><span>Tradeasy ${side === 'buy' ? '매수' : '매도'}<span class="te-tag ${mode}">${mode === 'live' ? 'LIVE' : '시뮬레이션'}</span></span><span class="mut" data-x style="cursor:pointer">닫기</span></h4>`;
     let status = '';
-    if (!info || (info.error && !info.wallet)) status = 'DX에 연결할 수 없습니다. 탭을 새로고침하세요.';
-    else if (!info.wallet.exists) status = 'DX 지갑이 없습니다. DX 팝업에서 만드세요.';
-    else if (!info.wallet.unlocked) status = '지갑이 잠겨 있습니다. DX 팝업에서 잠금을 해제하세요.';
+    if (!info || (info.error && !info.wallet)) status = 'Tradeasy에 연결할 수 없습니다. 탭을 새로고침하세요.';
+    else if (!info.wallet.exists) status = 'Tradeasy 지갑이 없습니다. Tradeasy 팝업에서 만드세요.';
+    else if (!info.wallet.unlocked) status = '지갑이 잠겨 있습니다. Tradeasy 팝업에서 잠금을 해제하세요.';
     else if (info.error) status = info.friendly || info.error;
     else if (!st) status = '토큰 정보를 불러오는 중...';
     const preset = s && s.preset ? s.preset[side] : null;
     const v = (x, unit = '') => (x == null ? 'auto' : x + unit);
     const presetLine = preset ? `${esc(s.label)} · slippage ${esc(v(preset.slippage, '%'))} · priority ${esc(v(preset.priorityFeeSol))} · tip ${esc(v(preset.bribeFeeSol))}${preset.mevProtection ? ' · MEV 보호' : ''}` : '프리셋을 찾지 못했습니다';
-    const stLine = st ? `DX 지갑 ${st.solBalance.toFixed(4)} SOL · 보유 ${fmtNum(Number(st.tokenBalance))} ${esc(sym)}` : '';
+    const stLine = st ? `Tradeasy 지갑 ${st.solBalance.toFixed(4)} SOL · 보유 ${fmtNum(Number(st.tokenBalance))} ${esc(sym)}` : '';
     let body = `<div class="mut">${presetLine}</div><div class="mut">${stLine}</div>` + (status ? `<div class="warn">${esc(status)}</div>` : '');
     const disabled = status ? 'disabled' : '';
     const sols = [], pcts = [];
@@ -391,7 +391,7 @@
       body += '<div class="grid">';
       for (const p of (s ? s.percentageQuickSets : [25, 50, 100])) { body += `<button class="sell" data-pct="${p}" ${disabled || (none ? 'disabled' : '')}><b>${p}%</b><small data-pv></small></button>`; pcts.push(p); }
       body += '</div>';
-      if (none) body += '<div class="mut">DX 지갑에 이 토큰이 없습니다</div>';
+      if (none) body += '<div class="mut">Tradeasy 지갑에 이 토큰이 없습니다</div>';
     }
     if (!status) body += `<div class="mut" style="margin-top:6px">버튼 아래: 예상 수령량${side === 'buy' ? ` (${esc(sym)})` : ''} · 가격 영향</div>`;
     pop.innerHTML = head + body;
@@ -418,19 +418,19 @@
     }
   }
 
-  // ---------- DX mode: the terminal's own buttons, executed by DX ----------
-  // With DX mode on, trade clicks on the terminal's buttons are stopped in the capture phase (before the
-  // page's React handlers, which fire on pointerdown) and executed by DX with the same amount and preset.
-  // A trade click DX cannot read is blocked too, so a fee-charging terminal trade never slips through.
+  // ---------- Tradeasy mode: the terminal's own buttons, executed by Tradeasy ----------
+  // With Tradeasy mode on, trade clicks on the terminal's buttons are stopped in the capture phase (before the
+  // page's React handlers, which fire on pointerdown) and executed by Tradeasy with the same amount and preset.
+  // A trade click Tradeasy cannot read is blocked too, so a fee-charging terminal trade never slips through.
   const INTERCEPT = !!A.intercept;
-  const MODE_KEY = 'dxMode_' + SITE;
-  let dxMode = INTERCEPT;
-  try { chrome.storage.local.get(MODE_KEY, (v) => { if (v && typeof v[MODE_KEY] === 'boolean') dxMode = v[MODE_KEY]; place(); }); } catch (_) {}
+  const MODE_KEY = 'teMode_' + SITE;
+  let teMode = INTERCEPT;
+  try { chrome.storage.local.get(MODE_KEY, (v) => { if (v && typeof v[MODE_KEY] === 'boolean') teMode = v[MODE_KEY]; place(); }); } catch (_) {}
   function setDxMode(on) {
-    dxMode = on;
+    teMode = on;
     try { chrome.storage.local.set({ [MODE_KEY]: on }); } catch (_) {}
     place();
-    toast(card(on ? 'DX 모드 켜짐' : 'DX 모드 꺼짐', on ? `${A.name} 버튼을 누르면 DX가 체결합니다` : '터미널이 직접 체결합니다'), on ? 'ok' : 'err', true, 4000);
+    toast(card(on ? 'Tradeasy 모드 켜짐' : 'Tradeasy 모드 꺼짐', on ? `${A.name} 버튼을 누르면 Tradeasy가 체결합니다` : '터미널이 직접 체결합니다'), on ? 'ok' : 'err', true, 4000);
   }
   const NUM_RE = /^[\d.,]+%?$/;
   function panelOf(btn) {
@@ -472,13 +472,13 @@
   const isQuick = (b) => QUICK_RE.test(btnText(b));
   async function rowToken(el) {
     const id = 'q' + Math.random().toString(36).slice(2, 10);
-    el.setAttribute('data-dx-q', id);
+    el.setAttribute('data-te-q', id);
     const info = await new Promise((res) => {
       rowWaiters.set(id, res);
       window.postMessage({ [TAG]: true, kind: 'resolve-row', payload: { id } }, location.origin);
       setTimeout(() => { if (rowWaiters.has(id)) { rowWaiters.delete(id); res(null); } }, 400);
     });
-    el.removeAttribute('data-dx-q');
+    el.removeAttribute('data-te-q');
     if (info && new RegExp(`^${B58}$`).test(info.mint || '')) {
       if (info.quote && info.quote !== 'So11111111111111111111111111111111111111112') throw new Error('SOL로 거래되는 토큰만 지원합니다');
       if (info.protocol) protocolByMint.set(info.mint, info.protocol);
@@ -495,13 +495,13 @@
   const isPctInput = (input) => /%/.test(input.placeholder || '') || /%/.test(((input.parentElement || {}).innerText || '') + ((input.parentElement && input.parentElement.parentElement || {}).innerText || ''));
   async function sellPercent(mint, value, pctHint) {
     if (pctHint) return Math.min(100, value);
-    const r = await send({ type: 'state', mint }); // token amount -> % of the DX balance
+    const r = await send({ type: 'state', mint }); // token amount -> % of the Tradeasy balance
     const bal = r && r.state ? Number(r.state.tokenBalance) : 0;
-    if (!(bal > 0)) throw new Error('DX 지갑에 이 토큰이 없습니다');
+    if (!(bal > 0)) throw new Error('Tradeasy 지갑에 이 토큰이 없습니다');
     return Math.min(100, (value / bal) * 100);
   }
   async function handle(c) {
-    const fail = (m) => toast(card('DX 모드', m), 'err', true, 8000);
+    const fail = (m) => toast(card('Tradeasy 모드', m), 'err', true, 8000);
     try {
       if (c.kind === 'chip') {
         fillInput(c.panel.input, c.value);
@@ -524,7 +524,7 @@
         // the page's own token only for one-click buttons inside this page's trade panel
         const inPanel = [...tracked.keys()].some((b) => { const p = b.isConnected && panelOf(b); return p && p.el.contains(c.el); });
         const mint = (await rowToken(c.el)) || (inPanel ? urlMint() : null);
-        if (!mint || !c.value) return fail(`이 버튼의 토큰을 알 수 없어 막았습니다. DX 모드를 끄면 터미널에서 직접 거래됩니다`);
+        if (!mint || !c.value) return fail(`이 버튼의 토큰을 알 수 없어 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 거래됩니다`);
         if (c.side === 'buy') return doTrade({ side: 'buy', sol: c.value, mint }, null);
         return doTrade({ side: 'sell', percent: await sellPercent(mint, c.value, c.pct), mint }, null);
       }
@@ -534,12 +534,12 @@
   const actOnce = (el) => { if (el === lastEl && Date.now() - lastAct < 400) return false; lastAct = Date.now(); lastEl = el; return true; }; // double press guard
   if (INTERCEPT) {
     const onPointer = (e) => {
-      if (!dxMode) return;
+      if (!teMode) return;
       const c = classify(e.target);
       if (!c) return;
       e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
       // extension was updated under this tab: keep blocking terminal trades (no silent fee trade), ask for a refresh
-      if (dead) { if (e.type === 'pointerdown' && e.isTrusted) toast('DX가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.', 'err', false, 8000); return; }
+      if (dead) { if (e.type === 'pointerdown' && e.isTrusted) toast('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.', 'err', false, 8000); return; }
       // act once per press, on pointerdown (that is when the terminal itself would trade)
       if (e.type !== 'pointerdown' || e.button !== 0 || !e.isTrusted) return;
       if (!actOnce(c.el)) return;
@@ -547,7 +547,7 @@
     };
     ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click', 'dblclick', 'auxclick', 'touchstart', 'touchend'].forEach((t) => window.addEventListener(t, onPointer, true));
     window.addEventListener('keydown', (e) => {
-      if (!dxMode || (e.key !== 'Enter' && e.key !== ' ')) return;
+      if (!teMode || (e.key !== 'Enter' && e.key !== ' ')) return;
       const c = classify(document.activeElement);
       if (!c) return;
       e.preventDefault(); e.stopImmediatePropagation();
@@ -557,12 +557,12 @@
 
   // ---------- badges ----------
   const tracked = new Map(); // button -> badge
-  // While DX mode is on, the terminal's market button is covered by DX's own button of the same size and label:
+  // While Tradeasy mode is on, the terminal's market button is covered by Tradeasy's own button of the same size and label:
   // the press lands on our element (outside the page's React tree), so the page never sees it. The capture-phase
   // blocking above stays as a second line (e.g. a press during a scroll before the cover moves).
   const covers = new Map(); // button -> cover
   function makeCover(btn) {
-    const cv = document.createElement('div'); cv.className = 'dx-cover';
+    const cv = document.createElement('div'); cv.className = 'te-cover';
     const cs = getComputedStyle(btn);
     Object.assign(cv.style, { font: cs.font, fontWeight: '700', borderRadius: cs.borderRadius, letterSpacing: cs.letterSpacing });
     const swallow = (e) => { e.preventDefault(); e.stopPropagation(); };
@@ -570,7 +570,7 @@
     cv.addEventListener('pointerdown', (e) => {
       swallow(e);
       if (!e.isTrusted || e.button !== 0 || busy) return;
-      if (dead) return toast('DX가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.', 'err', false, 8000);
+      if (dead) return toast('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.', 'err', false, 8000);
       if (!actOnce(btn)) return;
       const side = sideOf(btn);
       if (side) handle({ kind: 'main', el: btn, side });
@@ -579,15 +579,15 @@
   }
   let modeCache = 'sim';
   function makeBadge(btn) {
-    const b = document.createElement('span'); b.className = 'dx-badge';
-    if (INTERCEPT) { b.classList.add('tg'); b.innerHTML = '<span>DX</span><span class="sw"></span>'; } // a small switch: DX mode on/off
-    else { b.textContent = 'DX'; b.title = 'DX로 거래'; }
+    const b = document.createElement('span'); b.className = 'te-badge';
+    if (INTERCEPT) { b.classList.add('tg'); b.innerHTML = '<span>Tradeasy</span><span class="sw"></span>'; } // a small switch: Tradeasy mode on/off
+    else { b.textContent = 'Tradeasy'; b.title = 'Tradeasy로 거래'; }
     const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
     ['pointerdown', 'mousedown', 'mouseup'].forEach((t) => b.addEventListener(t, stop, true));
     b.addEventListener('click', (e) => {
       stop(e);
       if (!e.isTrusted) return;
-      if (INTERCEPT) return setDxMode(!dxMode);
+      if (INTERCEPT) return setDxMode(!teMode);
       const side = sideOf(btn);
       if (!side || !urlMint()) return;
       openPop(btn, b, side);
@@ -609,12 +609,12 @@
       }
       badge.classList.toggle('sim', modeCache !== 'live');
       if (INTERCEPT) {
-        badge.classList.toggle('off', !dxMode);
-        badge.setAttribute('role', 'switch'); badge.setAttribute('aria-checked', String(dxMode));
-        badge.title = dxMode ? `DX 모드: 이 버튼은 DX가 체결합니다 (누르면 끄기)` : 'DX 모드 꺼짐: 터미널이 체결합니다 (누르면 켜기)';
+        badge.classList.toggle('off', !teMode);
+        badge.setAttribute('role', 'switch'); badge.setAttribute('aria-checked', String(teMode));
+        badge.title = teMode ? `Tradeasy 모드: 이 버튼은 Tradeasy가 체결합니다 (누르면 끄기)` : 'Tradeasy 모드 꺼짐: 터미널이 체결합니다 (누르면 켜기)';
         let cv = covers.get(btn);
         if (!cv) { cv = makeCover(btn); getLayer().appendChild(cv); covers.set(btn, cv); }
-        cv.style.display = visible && dxMode ? 'flex' : 'none';
+        cv.style.display = visible && teMode ? 'flex' : 'none';
         Object.assign(cv.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
         // same content as the terminal's button (e.g. "Buy TOKEN" + SOL icon + amount): copy its nodes, not its flattened text
         if (cv.dataset.src !== btn.innerHTML) { cv.replaceChildren(...[...btn.childNodes].map((n) => n.cloneNode(true))); cv.dataset.src = btn.innerHTML; }
@@ -639,22 +639,22 @@
   every(() => { if (tracked.size) place(); }, 400);
   window.addEventListener('scroll', place, true);
   window.addEventListener('resize', place);
-  // DX average buy line on the terminal chart (hook.js draws it; only the MAIN world can reach the chart)
+  // Tradeasy average buy line on the terminal chart (hook.js draws it; only the MAIN world can reach the chart)
   every(async () => {
     const mint = urlMint();
     if (!mint || dead) return;
     const r = await send({ type: 'avgline', mint });
     const line = r && r.line;
-    window.postMessage({ [TAG]: true, kind: 'avg-line', payload: line ? { mint, avg: line.avg, spot: line.spot, label: 'DX 평균 매수' } : { mint } }, location.origin);
+    window.postMessage({ [TAG]: true, kind: 'avg-line', payload: line ? { mint, avg: line.avg, spot: line.spot, label: 'Tradeasy 평균 매수' } : { mint } }, location.origin);
   }, 3_000);
   const pollMode = async () => { const r = await send({ type: 'state', mint: urlMint() }); if (r && r.mode) { modeCache = r.mode === 'live' ? 'live' : 'sim'; place(); } };
   every(pollMode, 5_000); pollMode();
-  // popup changes (SIMULATE/LIVE, DX mode switch) apply immediately
+  // popup changes (SIMULATE/LIVE, Tradeasy mode switch) apply immediately
   try {
     chrome.storage.onChanged.addListener((ch, area) => {
       if (area !== 'local' || dead) return;
       if (ch.mode) { modeCache = ch.mode.newValue === 'live' ? 'live' : 'sim'; place(); }
-      if (ch[MODE_KEY] && typeof ch[MODE_KEY].newValue === 'boolean' && ch[MODE_KEY].newValue !== dxMode) { dxMode = ch[MODE_KEY].newValue; place(); }
+      if (ch[MODE_KEY] && typeof ch[MODE_KEY].newValue === 'boolean' && ch[MODE_KEY].newValue !== teMode) { teMode = ch[MODE_KEY].newValue; place(); }
     });
   } catch (_) {}
   let observer = null;
@@ -664,9 +664,9 @@
     timers.forEach(clearInterval);
     if (observer) observer.disconnect();
     window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place);
-    document.querySelectorAll('#dx-layer .dx-badge, #dx-layer .dx-pop').forEach((x) => x.remove());
+    document.querySelectorAll('#te-layer .te-badge, #te-layer .te-pop').forEach((x) => x.remove());
     // covers stay (and keep swallowing presses) so a stale tab never lets a terminal trade through
-    toast('DX Trader가 업데이트되었습니다. 이 탭을 새로고침하면 DX 버튼이 다시 동작합니다.', 'err', false, 0);
+    toast('Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하면 Tradeasy 버튼이 다시 동작합니다.', 'err', false, 0);
   };
   every(() => { if (!alive()) retire(); }, 2000);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

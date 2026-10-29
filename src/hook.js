@@ -1,4 +1,4 @@
-// DX - MAIN world hook (document_start). Read-only taps, results are postMessage'd to content.js:
+// Tradeasy - MAIN world hook (document_start). Read-only taps, results are postMessage'd to content.js:
 //  - GMGN XHR: mutil_window_token_info (exchange, pool, name/symbol/logo), recommend_slippage (auto slippage)
 //  - Axiom fetch: token-and-best-pair-info (protocol, best pair, name/ticker/image)
 //  - Axiom client-socket SharedWorker port -> blockhash + trades for the current token
@@ -7,7 +7,7 @@
 (() => {
   if (window.__DX_HOOKED__) return;
   window.__DX_HOOKED__ = true;
-  const TAG = '__DX__';
+  const TAG = '__TRADEASY__';
   const post = (kind, payload) => { try { window.postMessage({ [TAG]: true, kind, payload }, location.origin); } catch (_) {} };
   const MINT_RE = /\/(?:token|meme)\/([1-9A-HJ-NP-Za-km-z]{32,44})/;
   const currentMint = () => (location.pathname.match(MINT_RE) || [])[1] || null;
@@ -45,13 +45,13 @@
     return p;
   };
   const XO = XMLHttpRequest.prototype.open, XS = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.open = function (m, u) { this.__dxUrl = String(u || ''); return XO.apply(this, arguments); };
+  XMLHttpRequest.prototype.open = function (m, u) { this.__teUrl = String(u || ''); return XO.apply(this, arguments); };
   XMLHttpRequest.prototype.send = function () {
-    if (this.__dxUrl && WANT.test(this.__dxUrl)) {
+    if (this.__teUrl && WANT.test(this.__teUrl)) {
       this.addEventListener('load', () => {
         try {
           const j = this.responseType === 'json' ? this.response : (this.responseType === '' || this.responseType === 'text') ? JSON.parse(this.responseText) : null;
-          onJson(this.__dxUrl, j);
+          onJson(this.__teUrl, j);
         } catch (_) {}
       });
     }
@@ -98,11 +98,11 @@
     });
   }
   // ---- row token lookup for one-click buttons (Axiom lists): React props carry the row's pair info ----
-  // content.js marks the clicked button with data-dx-q and asks; only the MAIN world can read React fibers.
+  // content.js marks the clicked button with data-te-q and asks; only the MAIN world can read React fibers.
   window.addEventListener('message', (e) => {
     if (e.source !== window || !e.data || e.data[TAG] !== true || e.data.kind !== 'resolve-row') return;
     const id = String(e.data.payload && e.data.payload.id || '');
-    const el = id && document.querySelector('[data-dx-q="' + id.replace(/[^a-z0-9]/gi, '') + '"]');
+    const el = id && document.querySelector('[data-te-q="' + id.replace(/[^a-z0-9]/gi, '') + '"]');
     let info = null;
     try {
       const fk = el && Object.keys(el).find((k) => k.startsWith('__reactFiber$'));
@@ -114,9 +114,9 @@
     } catch (_) {}
     post('row-info', { id, info });
   });
-  // ---- DX average buy line on the terminal's TradingView chart ----
+  // ---- Tradeasy average buy line on the terminal's TradingView chart ----
   // The chart may plot price or market cap, in USD or SOL; all are proportional to the token's SOL price, so the
-  // line level = avg * (chart close / DX mid price), with the ratio smoothed over recent samples.
+  // line level = avg * (chart close / Tradeasy mid price), with the ratio smoothed over recent samples.
   let avgShape = null, ratios = [], lastMint = null;
   const chartApi = () => {
     for (const f of document.querySelectorAll('iframe')) {
@@ -148,7 +148,7 @@
       if (sh) { sh.setPoints([{ time: now, price }]); return; }
       avgShape = await ch.createShape({ time: now, price }, {
         shape: 'horizontal_line', lock: true, disableSelection: true, disableSave: true, disableUndo: true, showInObjectsTree: false,
-        text: p.label || 'DX avg',
+        text: p.label || 'Tradeasy avg',
         overrides: { linecolor: '#a855f7', linestyle: 2, linewidth: 1, showLabel: true, textcolor: '#c084fc', horzLabelsAlign: 'left', vertLabelsAlign: 'bottom', fontsize: 11, bold: true },
       });
     } catch (_) { avgShape = null; }

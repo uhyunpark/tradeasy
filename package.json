@@ -1,6 +1,6 @@
 {
-  "name": "dx-trader",
-  "version": "0.21.0",
+  "name": "tradeasy",
+  "version": "0.22.0",
   "description": "Chrome MV3 extension: trade from Axiom/GMGN with your own hot wallet via Helius Sender",
   "scripts": {
     "build": "node build.mjs",

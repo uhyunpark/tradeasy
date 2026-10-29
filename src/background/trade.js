@@ -14,6 +14,7 @@ import { PUMP_AMM_SDK } from '@pump-fun/pump-sdk/swap';
 import { NATIVE_MINT, getAssociatedTokenAddressSync, createAssociatedTokenAccountIdempotentInstruction, createSyncNativeInstruction, createCloseAccountInstruction } from '@solana/spl-token';
 import { DAMM_V2_PROGRAM, DBC_PROGRAM, buildDammV2, buildDbc } from './meteora.js';
 import { LAUNCHLAB_PROGRAM, CPMM_PROGRAM, buildLaunchLab, buildCpmm } from './raydium.js';
+import { JUPITER_PROGRAM, buildJupiter } from './jupiter.js';
 import { getConfig } from './config.js';
 import { getKeypair } from './vault.js';
 import * as market from './market.js';
@@ -35,10 +36,10 @@ const SENDER_URL = 'https://sender.helius-rpc.com/fast';
 const ALLOWED_PROGRAMS = new Set([
   ComputeBudgetProgram.programId, SystemProgram.programId, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID, PUMP_PROGRAM_ID, PUMP_AMM_PROGRAM_ID, PUMP_FEE_PROGRAM_ID, MAYHEM_PROGRAM_ID,
-  DAMM_V2_PROGRAM, DBC_PROGRAM, LAUNCHLAB_PROGRAM, CPMM_PROGRAM,
+  DAMM_V2_PROGRAM, DBC_PROGRAM, LAUNCHLAB_PROGRAM, CPMM_PROGRAM, JUPITER_PROGRAM,
 ].map((p) => p.toBase58()));
 // per-venue CU limit (simulated usage + headroom); the configured cuLimit is the floor
-const VENUE_CU = { pump: 200_000, pumpswap: 200_000, meteora_damm_v2: 200_000, meteora_dbc: 250_000, raydium_launchlab: 200_000, raydium_cpmm: 200_000 };
+const VENUE_CU = { pump: 200_000, pumpswap: 200_000, meteora_damm_v2: 200_000, meteora_dbc: 250_000, raydium_launchlab: 200_000, raydium_cpmm: 200_000, jupiter: 400_000 };
 
 // ---- blockhash from the terminal feed (fallback: RPC) ----
 let feedBlockhash = null; // { hash, at } from the Axiom socket feed (GMGN has none: RPC prefetch)
@@ -78,7 +79,13 @@ function withWsol(ixs, user, wrapLamports) {
   return [...pre, ...ixs, ...post];
 }
 
-async function swapInstructions(st, user, req, slippage) {
+async function swapInstructions(st, user, req, slippage, opts = {}) {
+  if (st.venue === 'jupiter') {
+    const amount = req.side === 'buy' ? new BN(lamports(req.sol)) : pctOf(st.tokenBalance, req.percent);
+    if (amount.lten(0)) throw new Error(req.side === 'buy' ? 'invalid buy amount' : 'no token balance to sell');
+    const r = await buildJupiter({ mint: st.mint, user, side: req.side, amount, slippage, apiKey: opts.jupiterApiKey, maxAccounts: opts.maxAccounts });
+    return { ixs: r.ixs, alts: r.alts, quote: { ...r.quote, via: st.quoteMint } };
+  }
   if (st.venue === 'raydium_launchlab' || st.venue === 'raydium_cpmm') {
     const r = st.venue === 'raydium_launchlab' ? buildLaunchLab(st, user, req, slippage) : buildCpmm(st, user, req, slippage);
     return { ixs: withWsol(r.ixs, user, r.wrapLamports), quote: r.quote };
@@ -193,7 +200,7 @@ export async function buildIxs(st, user, req, preset, cfg) {
   if (maxFee > 0 && priorityLamports + tipLamports > maxFee) throw new Error('priority + tip exceeds preset max fee');
   const microLamports = Math.max(1, Math.floor((priorityLamports * 1e6) / cuLimit));
 
-  const { ixs: swapIxs, quote } = await swapInstructions(st, user, req, slippage);
+  const { ixs: swapIxs, quote, alts = [] } = await swapInstructions(st, user, req, slippage, { jupiterApiKey: cfg.jupiterApiKey, maxAccounts: cfg.maxAccounts });
   const tip = SystemProgram.transfer({
     fromPubkey: user, toPubkey: new PublicKey(SENDER_TIP_ACCOUNTS[Math.floor(Math.random() * SENDER_TIP_ACCOUNTS.length)]), lamports: tipLamports,
   });
@@ -209,7 +216,7 @@ export async function buildIxs(st, user, req, preset, cfg) {
   const maxOutflow = (req.side === 'buy' ? Math.ceil(lamports(req.sol) * (1 + slippage / 100)) : 0) + tipLamports + 10_000_000;
   verify(ixs, user, { maxOutflowLamports: maxOutflow, wsolAta });
 
-  return { ixs, quote, priorityLamports, tipLamports, microLamports, cuLimit };
+  return { ixs, alts, quote, priorityLamports, tipLamports, microLamports, cuLimit };
 }
 
 export async function execute(req) {
@@ -218,7 +225,7 @@ export async function execute(req) {
   const kp = await getKeypair();
   if (!kp) throw new Error('wallet is locked (popup > Unlock)');
   const user = kp.publicKey;
-  // fill "auto"/missing preset fields with DX defaults
+  // fill "auto"/missing preset fields with Tradeasy defaults
   const raw = req.preset || {};
   const filled = [];
   const fill = (k, d) => { if (raw[k] == null || raw[k] === '') { filled.push(`${k}=${d}`); return d; } return raw[k]; };
@@ -241,12 +248,27 @@ export async function execute(req) {
   if (!st || st.user !== user.toBase58() || Date.now() - st.at > 15_000) st = await market.refresh(req.mint, user, { protocol: req.protocol, pool: req.pool });
   const tState = Date.now();
 
-  const { ixs, quote, priorityLamports, tipLamports, microLamports, cuLimit } = await buildIxs(st, user, req, preset, cfg);
+  const bh = await recentBlockhash();
+  const compile = async (c2) => {
+    const b = await buildIxs(st, user, req, preset, c2);
+    const m = new TransactionMessage({ payerKey: user, recentBlockhash: bh.hash, instructions: b.ixs }).compileToV0Message(b.alts);
+    const t = new VersionedTransaction(m);
+    t.sign([kp]);
+    return { ...b, tx: t, size: t.serialize().length };
+  };
+  let built = await compile(cfg);
+  if (built.size > 1232 && st.venue === 'jupiter') built = await compile({ ...cfg, maxAccounts: 28 }); // fewer route accounts
+  const { tx, size, quote, priorityLamports, tipLamports, microLamports, cuLimit } = built;
+  if (size > 1232) throw new Error(`transaction too large (${size} bytes)`);
   // human-readable expectation for the result toast
   let expected = null;
   try {
     const dec = market.summary(st).decimals;
-    if (req.side === 'buy') {
+    if (st.venue === 'jupiter') {
+      expected = req.side === 'buy'
+        ? { sol: Number(req.sol), tokens: Number(quote.outAmount) / 10 ** dec }
+        : { tokens: Number(quote.inAmount) / 10 ** dec, sol: Number(quote.outAmount) / 1e9 };
+    } else if (req.side === 'buy') {
       const inL = new BN(lamports(req.sol));
       expected = { sol: Number(req.sol), tokens: Number((await quoteOut(st, 'buy', inL)).toString()) / 10 ** dec };
     } else {
@@ -255,12 +277,6 @@ export async function execute(req) {
     }
   } catch (_) {}
 
-  const bh = await recentBlockhash();
-  const msg = new TransactionMessage({ payerKey: user, recentBlockhash: bh.hash, instructions: ixs }).compileToV0Message();
-  const tx = new VersionedTransaction(msg);
-  tx.sign([kp]);
-  const size = tx.serialize().length;
-  if (size > 1232) throw new Error(`transaction too large (${size} bytes)`);
   const tBuilt = Date.now();
 
   const base = {
@@ -270,8 +286,9 @@ export async function execute(req) {
     warnings: [
       ...(preset.autoFee ? ['preset autoFee is on: using fixed priorityFeeSol from the preset'] : []),
       ...(raw.fromScreen && raw.fromScreen.length ? [`auto -> terminal on-screen value: ${raw.fromScreen.join(', ')}`] : []),
-      ...(filled.length ? [`auto -> DX defaults: ${filled.join(', ')}`] : []),
+      ...(filled.length ? [`auto -> Tradeasy defaults: ${filled.join(', ')}`] : []),
       ...(tipLamports < MIN_TIP_MAX ? ['tip below 0.001 SOL: sent via Sender SWQoS-only path'] : []),
+      ...(st.venue === 'jupiter' ? [`routed via Jupiter: ${(quote.route || []).join(' -> ')} (quote token ${st.quoteMint || '?'})`] : []),
     ],
   };
 

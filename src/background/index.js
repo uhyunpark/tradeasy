@@ -10,6 +10,13 @@ import * as withdraw from './withdraw.js';
 import * as accounts from './accounts.js';
 import { explain } from './errors.js';
 
+// renamed storage key (v0.22): DX mode -> Tradeasy mode
+chrome.storage.local.get(['dxMode_axiom', 'teMode_axiom']).then((s) => {
+  if (s.dxMode_axiom === undefined) return;
+  if (s.teMode_axiom === undefined) chrome.storage.local.set({ teMode_axiom: s.dxMode_axiom });
+  chrome.storage.local.remove('dxMode_axiom');
+}).catch(() => {});
+
 // ---------- watched token (per tab) ----------
 const watch = new Map(); // tabId -> { mint, protocol, pool, site }
 const refreshTimers = new Map(); // mint -> timeout id
@@ -90,10 +97,10 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
             const err = lastError.get(msg.mint) || null;
             return reply({ state: market.summary(st), error: err, friendly: err ? explain(err) : null, wallet: v, mode: cfg.mode });
           }
-          case 'avgline': { // DX average buy price + current mid price, for the line on the terminal's chart
+          case 'avgline': { // Tradeasy average buy price + current mid price, for the line on the terminal's chart
             const p = await positions.get(msg.mint);
             const st = market.cached(msg.mint);
-            // only while DX still holds some of what it bought
+            // only while Tradeasy still holds some of what it bought
             if (!p || !p.tradeSolIn || !(p.tokIn > 0) || !(p.tokIn - p.tokOut > p.tokIn * 1e-4) || !st) return reply({ line: null });
             const spot = await quote.spotPrice(st, market.summary(st).decimals).catch(() => null);
             return reply({ line: spot ? { avg: p.tradeSolIn / p.tokIn, spot, at: st.at } : null });

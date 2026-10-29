@@ -6,6 +6,7 @@ export const DEFAULTS = {
   cuLimit: 200000,       // compute unit limit (sims: ~105-115k); priority fee total = preset.priorityFeeSol
   ignoreMev: false,      // if preset.mevProtection is on and this is false, Sender mev-protect is used
   autoLockMin: 60,
+  jupiterApiKey: '',     // optional; Jupiter routes non-SOL pairs (keyless: 0.5 req/s)
   // used when the terminal preset is "auto" (GMGN) or empty
   autoSlippage: 20,          // %
   autoPriorityFeeSol: 0.0003,

@@ -26,17 +26,17 @@ for (const f of ['hook.js', 'content.js', 'popup.html', 'popup.js']) copyFileSyn
 
 writeFileSync(`${out}/manifest.json`, JSON.stringify({
   manifest_version: 3,
-  name: 'DX Trader (dev)',
-  version: '0.21.0',
+  name: 'Tradeasy (dev)',
+  version: '0.22.0',
   description: 'Trade pump.fun, PumpSwap, Meteora DBC/DAMM v2 and Raydium LaunchLab/CPMM from Axiom / GMGN with your own wallet via Helius Sender.',
   permissions: ['storage', 'activeTab', 'favicon'],
-  host_permissions: ['https://axiom.trade/*', 'https://gmgn.ai/*', 'https://*.helius-rpc.com/*'],
+  host_permissions: ['https://axiom.trade/*', 'https://gmgn.ai/*', 'https://*.helius-rpc.com/*', 'https://api.jup.ag/*'],
   background: { service_worker: 'background.js', type: 'module' },
   content_scripts: [
     { matches: ['https://axiom.trade/*', 'https://gmgn.ai/*'], js: ['hook.js'], run_at: 'document_start', world: 'MAIN' },
     { matches: ['https://axiom.trade/*', 'https://gmgn.ai/*'], js: ['content.js'], run_at: 'document_start' },
   ],
-  action: { default_popup: 'popup.html', default_title: 'DX Trader' },
+  action: { default_popup: 'popup.html', default_title: 'Tradeasy' },
   content_security_policy: { extension_pages: "script-src 'self'; object-src 'self'" },
 }, null, 2));
 console.log('built', out);

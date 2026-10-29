@@ -1,4 +1,4 @@
-// Send SOL out of the DX wallet (popup only). Plain System transfer via the RPC.
+// Send SOL out of the Tradeasy wallet (popup only). Plain System transfer via the RPC.
 import { PublicKey, SystemProgram, ComputeBudgetProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { getKeypair } from './vault.js';
 import * as market from './market.js';
@@ -12,7 +12,7 @@ export async function plan({ to, sol, max }) {
   if (!kp) throw new Error('wallet is locked');
   let dest;
   try { dest = new PublicKey(String(to || '').trim()); } catch (_) { throw new Error('받는 주소가 올바른 Solana 주소가 아닙니다'); }
-  if (dest.equals(kp.publicKey)) throw new Error('DX 지갑 자신에게는 보낼 수 없습니다');
+  if (dest.equals(kp.publicKey)) throw new Error('Tradeasy 지갑 자신에게는 보낼 수 없습니다');
   const c = await market.connection();
   const bal = await c.getBalance(kp.publicKey, 'confirmed');
   const lamports = max ? bal - FEE_LAMPORTS : Math.round(Number(sol) * 1e9);

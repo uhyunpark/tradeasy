@@ -5,19 +5,22 @@ const QUOTES = { pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn: 'PUMP', EPjFWdd5Au
   Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT', USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB: 'USD1',
   '98sMhvDwXj1RQi5c5Mndm3vPe9cBqPrbLaufMXFNMh5g': 'HYPE' };
 const RULES = [
+  [/Jupiter: rate limited/i, 'Jupiter 요청 한도에 걸렸습니다. 2초 뒤 다시 시도하세요 (설정 > 고급에서 Jupiter API key를 넣으면 한도가 늘어납니다).'],
+  [/Jupiter: (No routes found|no route)/i, 'Jupiter가 거래 경로를 찾지 못했습니다.'],
+  [/Jupiter:/i, 'Jupiter 경로를 받아오지 못했습니다. 잠시 후 다시 시도하세요.'],
   [/only SOL-(?:quoted|paired)[^(]*\(quote (\w+)\)/i, (m) => {
     const meta = tokenMeta.get(m[1]);
     const sym = QUOTES[m[1]] || (meta && meta.symbol) || null;
     return sym
-      ? `${sym} 페어 코인입니다. SOL이 아니라 ${sym}로 사고파는 풀이라 DX는 아직 지원하지 않습니다.`
-      : `SOL이 아닌 다른 토큰(${m[1].slice(0, 4)}…${m[1].slice(-4)})과 페어인 코인이라 DX는 아직 지원하지 않습니다.`;
+      ? `${sym} 페어 코인입니다. SOL이 아니라 ${sym}로 사고파는 풀이라 Tradeasy는 아직 지원하지 않습니다.`
+      : `SOL이 아닌 다른 토큰(${m[1].slice(0, 4)}…${m[1].slice(-4)})과 페어인 코인이라 Tradeasy는 아직 지원하지 않습니다.`;
   }],
-  [/only SOL-(?:quoted|paired)/i, 'SOL이 아닌 다른 토큰과 페어인 코인이라 DX는 아직 지원하지 않습니다.'],
-  [/wallet is locked/i, '지갑이 잠겨 있습니다. DX 팝업에서 잠금을 해제하세요.'],
-  [/API key is not set|no rpc/i, 'Helius가 연결되지 않았습니다. DX 팝업 > 설정에서 API key를 입력하세요.'],
-  [/exceeds max per trade \(([\d.]+)\)/i, (m) => `1회 최대 금액(${m[1]} SOL)을 넘습니다. DX 설정에서 바꿀 수 있습니다.`],
-  [/wallet has no SOL|AccountNotFound/i, 'DX 지갑에 SOL이 없습니다. 먼저 입금하세요.'],
-  [/no token balance to sell/i, '팔 토큰이 DX 지갑에 없습니다.'],
+  [/only SOL-(?:quoted|paired)/i, 'SOL이 아닌 다른 토큰과 페어인 코인이라 Tradeasy는 아직 지원하지 않습니다.'],
+  [/wallet is locked/i, '지갑이 잠겨 있습니다. Tradeasy 팝업에서 잠금을 해제하세요.'],
+  [/API key is not set|no rpc/i, 'Helius가 연결되지 않았습니다. Tradeasy 팝업 > 설정에서 API key를 입력하세요.'],
+  [/exceeds max per trade \(([\d.]+)\)/i, (m) => `1회 최대 금액(${m[1]} SOL)을 넘습니다. Tradeasy 설정에서 바꿀 수 있습니다.`],
+  [/wallet has no SOL|AccountNotFound/i, 'Tradeasy 지갑에 SOL이 없습니다. 먼저 입금하세요.'],
+  [/no token balance to sell/i, '팔 토큰이 Tradeasy 지갑에 없습니다.'],
   [/graduated to Raydium AMM v4/i, 'Raydium AMM v4로 졸업한 토큰이라 아직 지원하지 않습니다.'],
   [/unsupported venue/i, '아직 지원하지 않는 풀입니다 (Raydium AMM v4·CLMM, Meteora DLMM 등).'],
   [/swaps are disabled/i, '이 풀은 현재 거래가 중지되어 있습니다.'],

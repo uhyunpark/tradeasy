@@ -1,5 +1,5 @@
 // Empty token accounts: list them and close them in batches to get the rent back (settings, popup only).
-// Only zero-balance accounts owned and closable by the DX wallet; rent always goes back to the wallet.
+// Only zero-balance accounts owned and closable by the Tradeasy wallet; rent always goes back to the wallet.
 import { PublicKey, ComputeBudgetProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, createCloseAccountInstruction } from '@solana/spl-token';
 import { getKeypair } from './vault.js';

@@ -4,6 +4,7 @@ Chrome extension for trading on Axiom and GMGN with their own UI and presets, wh
 
 - Axiom: press the usual buy and sell buttons
 - GMGN: Tradeasy badge next to the buy and sell buttons
+- Coins not paired with SOL are routed using Jupiter
 - Simulation by default; switch to LIVE in the popup for real trades
 
 ## Install
