@@ -67,6 +67,7 @@ function view() {
   $('hTitle').textContent = v === 'vSend' ? T('SOL 출금') : T('설정');
   show('modeSeg', !inSettings && !setup && v !== 'vLocked');
   show('btnGear', !inSettings && !setup);
+  show('langMini', setup || v === 'vLocked'); // settings are not reachable here: language toggle in the header
   show('siteStatus', !inSettings && !setup);
   show('liveConfirm', liveAsk && !inSettings && !setup);
   document.querySelectorAll('#modeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === C.mode));
@@ -529,8 +530,8 @@ async function renderAll() {
 async function refresh() { await load(); await renderAll(); }
 
 // language: 한국어 / English (settings). Static markup is translated in place; dynamic parts re-render.
-const renderLang = () => document.querySelectorAll('#langSeg button').forEach((b) => b.classList.toggle('on', b.dataset.lang === TE_I18N.lang));
-document.querySelectorAll('#langSeg button').forEach((b) => { b.onclick = () => TE_I18N.setLang(b.dataset.lang); });
+const renderLang = () => document.querySelectorAll('#langSeg button, #langMini button').forEach((b) => b.classList.toggle('on', b.dataset.lang === TE_I18N.lang));
+document.querySelectorAll('#langSeg button, #langMini button').forEach((b) => { b.onclick = () => TE_I18N.setLang(b.dataset.lang); });
 TE_I18N.onChange(() => { TE_I18N.dom(document.body); renderLang(); renderSite(); renderAll(); });
 TE_I18N.init().then(() => { TE_I18N.dom(document.body); renderLang(); renderSite(); refresh(); });
 setInterval(async () => { if (!document.hidden && tab === 'home') { await load(); renderAll(); } }, 3000);

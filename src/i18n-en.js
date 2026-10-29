@@ -261,6 +261,7 @@
     "홈으로": "Home",
     "언어": "Language",
     "한국어": "한국어",
+    "한": "한",
     "거래 설정": "Trading",
     "1회 최대 SOL": "Max SOL per trade",
     "저장됨": "Saved",
