@@ -189,6 +189,8 @@
   .te-badge.tg:not(.off) .sw::after{transform:translateX(8px)}
   .te-badge.tg.off .sw{background:var(--te-surface-3)}.te-badge.tg.off .sw::after{background:var(--te-muted)}
   .te-badge.tg:hover{filter:brightness(1.1)}
+  .te-badge.tg .md{display:inline-grid;padding:0 4px;border-radius:999px;background:rgba(0,0,0,.22);font-size:8px;line-height:12px;letter-spacing:.5px}
+  .te-badge.tg .md>span{grid-area:1/1;text-align:center}.te-badge.tg.sim .md>:last-child,.te-badge.tg:not(.sim) .md>:first-child{visibility:hidden}
   .te-cover *{color:var(--te-on-accent) !important}
   .te-cover.sim *{color:var(--te-on-fill) !important}
   .te-cover{position:fixed;z-index:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;box-sizing:border-box;
@@ -592,7 +594,7 @@
   let modeCache = 'sim';
   function makeBadge(btn) {
     const b = document.createElement('span'); b.className = 'te-badge';
-    if (INTERCEPT) { b.classList.add('tg'); b.innerHTML = '<span>Tradeasy</span><span class="sw"></span>'; } // a small switch: Tradeasy mode on/off
+    if (INTERCEPT) { b.classList.add('tg'); b.innerHTML = '<span>Tradeasy</span><span class="md"><span>SIM</span><span>LIVE</span></span><span class="sw"></span>'; } // a small switch: Tradeasy mode on/off, with SIM/LIVE
     else { b.textContent = 'Tradeasy'; b.title = T('Tradeasy로 거래'); }
     const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
     ['pointerdown', 'mousedown', 'mouseup'].forEach((t) => b.addEventListener(t, stop, true));
