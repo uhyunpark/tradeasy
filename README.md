@@ -2,6 +2,8 @@
 
 Chrome extension for trading on terminals with their own UI and presets, while trades are signed by the extension's wallet with your own configuration. No terminal fee.
 
+![Tradeasy demo](assets/demo.gif)
+
 ## Install
 
 ```bash
