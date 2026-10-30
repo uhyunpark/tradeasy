@@ -44,6 +44,7 @@
         });
         return {
           label: `Axiom ${key}`, preset: { buy: norm(p.buy), sell: norm(p.sell) },
+          names: { buy: String(key).replace(/^preset/i, 'P'), sell: String(key).replace(/^preset/i, 'P') },
           solQuickSets: (s.solQuickSets || []).map(num).filter(Boolean).slice(0, 8),
           percentageQuickSets: (s.percentageQuickSets || []).map(num).filter((x) => x && x <= 100).slice(0, 6),
           // Axiom stores the buy amount unit as "native" (SOL) or a fiat unit such as "usd"
@@ -83,6 +84,7 @@
         });
         return {
           label: `GMGN P${(sol.buy.tradeConfigIndex || 0) + 1}/P${(sol.sell.tradeConfigIndex || 0) + 1}`,
+          names: { buy: `P${(sol.buy.tradeConfigIndex || 0) + 1}`, sell: `P${(sol.sell.tradeConfigIndex || 0) + 1}` },
           preset: { buy: norm(pick('buy')), sell: norm(pick('sell')) },
           solQuickSets: (sol.buy.quickAmount || []).map(num).filter(Boolean).slice(0, 8),
           percentageQuickSets: (sol.sell.quickAmount || []).map(num).filter((x) => x && x <= 100).slice(0, 6),
@@ -243,7 +245,7 @@
   .te-pop button:disabled{opacity:.4;cursor:default}
   .te-tag{display:inline-block;padding:0 5px;border-radius:var(--te-r-xs);font-size:10px;font-weight:700;margin-left:4px}
   .te-tag.sim{background:var(--te-sim-soft);color:var(--te-sim)}.te-tag.live{background:var(--te-live-soft);color:var(--te-sell)}
-  .te-toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;width:330px}
+  .te-toasts{position:fixed;z-index:3;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;width:330px}
   .te-toast{display:flex;gap:10px;align-items:flex-start;background:var(--te-surface);color:var(--te-fg);border-radius:var(--te-r-lg);padding:12px 12px 12px 14px;
     box-shadow:inset 0 0 0 1px var(--te-line),var(--te-shadow-pop);font:13px/1.45 var(--te-font);max-height:50vh;overflow:auto;animation:tein .26s var(--te-spring)}
   @keyframes tein{from{opacity:0;transform:translateY(10px)}}
@@ -342,25 +344,31 @@
       else toast(card(T('시뮬레이션 실패'), x.friendly || what, details(['err ' + JSON.stringify(x.err), ...(x.logs || [])])), 'err', true, 0);
     } else {
       sentToasts.set(x.signature, toast(card(T('전송됨 · 체결 확인 중'), what, tx(x.signature)), '', true, 60_000).parentElement);
+      if (x.fees) { // the preset values this trade used ("auto" filled in), shown on its Filled toast
+        const sol = (l) => String(+(l / 1e9).toFixed(6));
+        usedPreset.set(x.signature, [s.names && s.names[req.side], T('슬리피지 {v}%', { v: x.slippage }), T('우선순위 {v}', { v: sol(x.fees.priorityLamports) }), T('팁 {v}', { v: sol(x.fees.tipLamports) })].filter(Boolean).join(' · '));
+      }
     }
   }
 
   const sentToasts = new Map(); // signature -> "sent" toast, replaced by the result toast
+  const usedPreset = new Map(); // signature -> preset line for the Filled toast
   chrome.runtime.onMessage.addListener((msg) => {
     if (!msg || msg.type !== 'confirm') return;
     const sent = sentToasts.get(msg.signature);
     if (sent) { sent.remove(); sentToasts.delete(msg.signature); }
     const c = msg.confirm;
+    const used = usedPreset.get(msg.signature); usedPreset.delete(msg.signature);
     const sym = msg.symbol || (metaByMint.get(urlMint()) || {}).symbol || T('토큰');
     if (c.status === 'confirmed') {
       const a = c.actual;
-      const main = !a ? '' : msg.side === 'buy' ? `${fmtSol(-a.sol)} SOL → ${fmtNum(a.tokens)} ${sym}` : `${fmtNum(-a.tokens)} ${sym} → ${fmtSol(a.sol)} SOL`;
+      const main = !a ? '' : msg.side === 'buy' ? `${fmtSol(a.tradeSol)} SOL → ${fmtNum(a.tokens)} ${sym}` : `${fmtNum(-a.tokens)} ${sym} → ${fmtSol(a.sol)} SOL`;
       const pr = c.price;
       const priceLine = !pr ? '' : msg.side === 'buy'
         ? T('체결가 {p} SOL', { p: fmtPrice(pr.fill) }) + (pr.avg && pr.buys > 1 ? ' · ' + T('평균 매수가 {p} SOL', { p: fmtPrice(pr.avg) }) : '')
         : T('체결가 {p} SOL', { p: fmtPrice(pr.fill) }) + (pr.avg ? ' · ' + T('평균 매수가 {p} SOL', { p: fmtPrice(pr.avg) }) : '');
       const speed = c.slots == null ? '' : c.slots === 0 ? T('보낸 슬롯에서 바로 체결') : T('보낸 뒤 {n}슬롯 만에 체결 (약 {s}초)', { n: c.slots, s: (c.slots * 0.4).toFixed(1) });
-      toast(card(T('체결 완료'), main, (priceLine ? `<div class="sub">${priceLine}</div>` : '') + (speed ? `<div class="sub">${speed}</div>` : '') + tx(msg.signature)), 'ok', true, 15_000);
+      toast(card(T('체결 완료'), main, (priceLine ? `<div class="sub">${priceLine}</div>` : '') + (speed ? `<div class="sub">${speed}</div>` : '') + (used ? `<div class="sub">${esc(used)}</div>` : '') + tx(msg.signature)), 'ok', true, 15_000);
     } else if (c.status === 'timeout') {
       toast(card(T('체결 확인 시간 초과'), T('45초 안에 확인되지 않았습니다.'), tx(msg.signature)), 'err', true, 0);
     } else {
@@ -459,7 +467,7 @@
     teMode = on;
     try { chrome.storage.local.set({ [MODE_KEY]: on }); } catch (_) {}
     place();
-    toast(card(on ? T('Tradeasy 모드 켜짐') : T('Tradeasy 모드 꺼짐'), on ? T('{site} 버튼을 누르면 Tradeasy가 체결합니다', { site: A.name }) : T('터미널이 직접 체결합니다')), on ? 'ok' : 'err', true, 4000);
+    toast(card(on ? T('Tradeasy 모드 켜짐') : T('Tradeasy 모드 꺼짐'), on ? T('거래 버튼을 누르면 Tradeasy가 체결합니다') : T('터미널이 직접 체결합니다')), on ? 'ok' : 'err', true, 4000);
   }
   const NUM_RE = /^[\d.,]+%?$/;
   function panelOf(btn) {

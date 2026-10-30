@@ -280,7 +280,7 @@ export async function execute(req) {
   const tBuilt = Date.now();
 
   const base = {
-    side: req.side, mint: req.mint, venue: st.venue, mode: cfg.mode, quote, expected, percent: req.percent, size,
+    side: req.side, mint: req.mint, venue: st.venue, mode: cfg.mode, quote, expected, percent: req.percent, size, slippage,
     fees: { priorityLamports, tipLamports, microLamports, cuLimit }, blockhashSource: bh.source,
     timing: { stateMs: tState - t0, buildMs: tBuilt - tState },
     warnings: [
