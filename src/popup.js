@@ -40,7 +40,7 @@ let curView = null;
 async function load() {
   [W, C] = await Promise.all([send({ type: 'wallet:status' }), send({ type: 'config:get' })]);
   let { onboard = null, backupAck } = await chrome.storage.local.get(['onboard', 'backupAck']);
-  if (!onboard && backupAck === false) onboard = { step: 'backup', created: true }; // v0.10.2 and older
+  if (!onboard && backupAck === false) onboard = { step: 'backup', created: true, legacy: true }; // v0.10.2 and older
   if (!W.exists) onboard = null;
   OB = onboard;
 }
@@ -121,7 +121,7 @@ function obPrev() {
   if (!OB) return null;
   if (OB.step === 'helius') return W.encrypted ? null : 'lock'; // lock already set: nothing to redo
   if (OB.step === 'lock') return OB.created ? 'backup' : 'wallet';
-  if (OB.step === 'backup') return 'wallet';
+  if (OB.step === 'backup') return OB.legacy ? null : 'wallet'; // a wallet from before onboarding may hold SOL: never start over
   return null;
 }
 $('btnObBack').onclick = async () => {
@@ -165,9 +165,11 @@ $('btnImport').onclick = async () => {
 
 // ---------- onboarding: 2 backup (new wallets) ----------
 async function renderBackup() {
-  if ($('backupKey').textContent) return;
+  if ($('backupKey').textContent && $('backupKey').dataset.pub === W.pubkey) return; // already shown for this wallet
   const k = await send({ type: 'wallet:reveal' });
   $('backupKey').textContent = k.secret || '';
+  $('backupKey').dataset.pub = W.pubkey || '';
+  $('backupChk').checked = false; $('btnBackupDone').disabled = true;
 }
 $('backupChk').onchange = () => { $('btnBackupDone').disabled = !$('backupChk').checked; };
 $('btnBackupDone').onclick = async () => { $('backupKey').textContent = ''; await setOnboard({ ...OB, step: 'lock' }); await refresh(); };

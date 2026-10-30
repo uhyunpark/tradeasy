@@ -145,12 +145,18 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await pop.click('#chCreate');
   await pop.waitForSelector('#vBackup:not(.hidden)', { timeout: 15000 });
   const firstPub = await pop.evaluate(() => chrome.storage.local.get('vault').then((s) => s.vault.pubkey));
+  await pop.waitForFunction(() => document.getElementById('backupKey').textContent.length > 40);
+  const firstKey = await pop.textContent('#backupKey');
+  await pop.check('#backupChk'); // ticked, then the user goes back anyway
   await pop.click('#btnObBack'); await pop.click('#dlgYes');
   await pop.waitForSelector('#vOnboard:not(.hidden)', { timeout: 10000 });
   obBack.walletRemoved = await pop.evaluate(() => chrome.storage.local.get('vault').then((s) => !s.vault));
   await pop.click('#chCreate');
   await pop.waitForSelector('#vBackup:not(.hidden)', { timeout: 15000 });
   obBack.newWallet = (await pop.evaluate(() => chrome.storage.local.get('vault').then((s) => s.vault.pubkey))) !== firstPub;
+  await pop.waitForFunction((k) => { const t = document.getElementById('backupKey').textContent; return t.length > 40 && t !== k; }, firstKey, { timeout: 5000 }).catch(() => {});
+  obBack.newKeyShown = (await pop.textContent('#backupKey')) !== firstKey; // never the deleted wallet's key
+  obBack.checkReset = !(await pop.isChecked('#backupChk')) && (await pop.isDisabled('#btnBackupDone'));
   await pop.check('#backupChk'); await pop.click('#btnBackupDone');
   await pop.waitForSelector('#vLockSetup:not(.hidden)', { timeout: 10000 });
   await pop.click('#btnObBack');
