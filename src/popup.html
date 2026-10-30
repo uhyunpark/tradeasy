@@ -4,179 +4,250 @@
 <meta charset="utf-8">
 <style>
   :root {
-    --bg:#0b0d12; --panel:#12151c; --panel2:#171b24; --line:#232836; --fg:#e8eaf0; --mut:#8a92a3; --dim:#5d6575;
-    --acc:#3b82f6; --acc2:#1d4ed8; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444; --sim:#8b5cf6; --live:#ef4444;
-    --r:10px;
+    /* @te-theme */
+    color-scheme:dark;
+    --ic-info:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E");
+    --ic-warn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E");
   }
   * { box-sizing:border-box; }
-  body { margin:0; width:360px; min-height:480px; background:var(--bg); color:var(--fg); font:13px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  html, body { margin:0; height:600px; overflow:hidden; }
+  body { position:relative; width:360px; display:flex; flex-direction:column; background:var(--te-bg); color:var(--te-fg); font:13px/1.45 var(--te-font); -webkit-font-smoothing:antialiased; word-break:keep-all; overflow-wrap:break-word; }
   button { font:inherit; color:inherit; cursor:pointer; }
-  input, textarea, select { font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; width:100%; outline:none; }
-  input:focus, textarea:focus { border-color:var(--acc); }
-  textarea { resize:none; height:64px; font:12px/1.4 ui-monospace,Menlo,monospace; }
-  code, .mono { font:12px ui-monospace,Menlo,monospace; }
+  :focus-visible { outline:2px solid var(--te-accent); outline-offset:2px; }
+  input, textarea { font:inherit; font-size:13px; color:var(--te-fg); background:var(--te-surface-2); border:0; box-shadow:inset 0 0 0 1px var(--te-line); border-radius:var(--te-r); height:40px; padding:0 12px; width:100%; outline:none; transition:box-shadow .15s; }
+  input:focus, textarea:focus { box-shadow:inset 0 0 0 1.5px var(--te-accent); }
+  input:focus-visible, textarea:focus-visible { outline:none; }
+  input::placeholder, textarea::placeholder { color:var(--te-dim); }
+  textarea { resize:none; height:72px; padding:10px 12px; font:12px/1.45 var(--te-mono); }
+  input[type=checkbox] { width:16px; height:16px; flex:0 0 16px; margin:0; padding:0; box-shadow:none; accent-color:var(--te-accent); cursor:pointer; }
+  code, .mono { font:12px var(--te-mono); }
   .hidden { display:none !important; }
-  .mut { color:var(--mut); } .dim { color:var(--dim); } .bad { color:var(--bad); } .ok { color:var(--ok); } .warn { color:var(--warn); }
-  .small { font-size:11px; }
+  .mut, .dim { color:var(--te-muted); } .bad { color:var(--te-bad); } .ok { color:var(--te-ok); } .warn { color:var(--te-warn); }
+  .small { font-size:12px; }
 
-  header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px 10px; }
-  .logo { width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg,#3b82f6,#8b5cf6); display:grid; place-items:center; font-size:10px; font-weight:800; color:#fff; }
-  .seg { display:flex; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:2px; }
-  .seg button { border:0; background:none; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; color:var(--mut); }
-  .seg button.on.sim { background:var(--sim); color:#fff; }
-  .seg button.on.live { background:var(--live); color:#fff; }
-  .seg button.on.lang { background:var(--panel2); color:#e2e6ee; }
-
-  .hright { display:flex; align-items:center; gap:8px; }
-  .icon { width:28px; height:28px; display:grid; place-items:center; border:0; background:transparent; border-radius:8px; color:var(--mut); padding:0; }
-  .icon:hover { background:var(--panel2); color:var(--fg); }
+  header { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:54px; padding:12px 16px 10px; }
+  .htitle { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; }
+  .htitle > .icon:first-child { margin-left:-6px; }
+  #hSettings { gap:4px; }
+  .logo { width:22px; height:22px; border-radius:6px; background:var(--te-accent); display:grid; place-items:center; font-size:11px; font-weight:800; color:var(--te-on-accent); }
+  .hright { display:flex; align-items:center; gap:6px; }
+  .seg { display:flex; gap:2px; padding:3px; border-radius:999px; background:var(--te-surface); box-shadow:inset 0 0 0 1px var(--te-line); }
+  .seg button { border:0; background:none; height:24px; padding:0 10px; border-radius:999px; font-size:11px; font-weight:700; color:var(--te-muted); transition:background .15s, color .15s, transform .1s var(--te-ease); }
+  .seg button:hover { color:var(--te-fg); }
+  .seg button:active { transform:scale(.95); }
+  .seg button.on.sim { background:var(--te-sim-fill); color:var(--te-on-fill); }
+  .seg button.on.live { background:var(--te-live); color:var(--te-on-fill); }
+  .seg button.on.lang { background:var(--te-surface-2); color:var(--te-fg); }
+  .icon { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; border:0; background:transparent; border-radius:50%; color:var(--te-muted); padding:0; transition:background .15s, color .15s, transform .1s var(--te-ease); }
+  .icon:hover { background:var(--te-surface-2); color:var(--te-fg); }
   .icon svg { width:18px; height:18px; }
-  .htitle { display:flex; align-items:center; gap:6px; font-weight:700; }
-  .status { display:flex; align-items:center; gap:7px; padding:0 14px 10px; font-size:12px; color:var(--mut); }
-  .status .dotlive { width:7px; height:7px; border-radius:50%; background:var(--dim); flex:0 0 7px; }
-  .status.on { color:var(--fg); }
-  .status.on .dotlive { background:var(--ok); box-shadow:0 0 0 3px rgba(16,185,129,.15); }
-  .status img { width:14px; height:14px; border-radius:3px; }
-  .saved { font-size:11px; color:var(--ok); margin-left:6px; opacity:0; transition:opacity .2s; }
+  .icon:active, .cp:active { transform:scale(.9); }
+
+  .status { flex:0 0 auto; display:flex; align-items:center; gap:8px; min-height:28px; padding:0 16px 8px; font-size:12px; color:var(--te-muted); }
+  .status .dotlive { width:7px; height:7px; border-radius:50%; background:var(--te-dim); flex:0 0 7px; }
+  .status.on { color:var(--te-fg); }
+  .status.on .dotlive { background:var(--te-ok); box-shadow:0 0 0 3px var(--te-buy-soft); }
+  .status img { width:14px; height:14px; border-radius:4px; }
+  .tesw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--te-muted); cursor:pointer; }
+  .saved { font-size:11px; color:var(--te-ok); margin-left:6px; opacity:0; transition:opacity .2s; }
   .saved.show { opacity:1; }
-  .foot { font-size:11px; color:var(--dim); text-align:center; padding:4px 0 2px; }
+  .foot { font-size:11px; color:var(--te-muted); text-align:center; padding:2px 0; }
 
-  main { padding:0 14px 14px; display:flex; flex-direction:column; gap:10px; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:12px; }
-  .card h3 { margin:0 0 8px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--mut); display:flex; justify-content:space-between; align-items:center; }
+  main { flex:1 1 auto; min-height:0; overflow-x:hidden; overflow-y:auto; padding:2px 12px 16px; display:flex; flex-direction:column; gap:10px; scrollbar-width:thin; scrollbar-color:var(--te-surface-3) transparent; }
+  main > * { flex-shrink:0; }
+  body[data-dir=fwd] main { animation:te-fwd var(--te-dur) var(--te-ease); }
+  body[data-dir=back] main { animation:te-back var(--te-dur) var(--te-ease); }
+  .card { background:var(--te-surface); border-radius:var(--te-r-xl); padding:14px; box-shadow:inset 0 0 0 1px var(--te-line); }
+  .card h3 { margin:0 0 10px; font-size:12px; font-weight:600; color:var(--te-muted); display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:22px; }
+  .stack > h3 { margin-bottom:0; }
   .row { display:flex; gap:8px; align-items:center; }
-  .stack { display:flex; flex-direction:column; gap:8px; }
-  .btn { white-space:nowrap; border:1px solid var(--line); background:var(--panel2); border-radius:8px; padding:8px 12px; font-weight:600; }
-  .btn:hover { border-color:#334; }
-  .btn.primary { background:var(--acc); border-color:var(--acc); color:#fff; }
-  .btn.primary:hover { background:var(--acc2); }
-  .btn.danger { background:transparent; border-color:#4b1d1d; color:#fca5a5; }
-  .btn.ghost { background:transparent; }
-  .btn.block { width:100%; }
-  .btn.sm { padding:4px 8px; font-size:11px; }
-  .link { background:none; border:0; color:#93c5fd; padding:0; font-size:12px; text-decoration:underline; text-underline-offset:3px; text-decoration-color:rgba(147,197,253,.45); }
-  .link:hover { color:#bfdbfe; text-decoration-color:currentColor; }
-  .step .link { margin-left:8px; }
-
-  .choice { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .choice button { text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:var(--r); padding:12px; }
-  .choice button:hover { border-color:var(--acc); }
-  .choice b { display:block; margin-bottom:4px; }
-  .choice span { color:var(--mut); font-size:11px; }
-  .steps { display:flex; flex-direction:column; gap:6px; }
-  .step { display:flex; gap:8px; align-items:flex-start; font-size:12px; }
-  .dot { flex:0 0 18px; height:18px; border-radius:50%; border:1px solid var(--line); display:grid; place-items:center; font-size:10px; color:var(--mut); }
-  .dot.done { background:var(--ok); border-color:var(--ok); color:#04110c; }
-
-  .bal { font-size:24px; font-weight:700; letter-spacing:-.3px; }
-  .bal small { font-size:13px; color:var(--mut); font-weight:500; }
-  .addr { display:flex; align-items:center; gap:6px; color:var(--mut); }
-  .pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:11px; background:var(--panel2); border:1px solid var(--line); color:var(--mut); text-transform:none; letter-spacing:0; }
-  .todo { border:1px dashed #3b3f4d; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; }
-
-  .kv { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:12px; margin:0; }
-  .kv dt { color:var(--mut); } .kv dd { margin:0; text-align:right; }
-  .log { display:flex; flex-direction:column; }
-  .log > div { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:12px; }
-  .log > div:first-child { border-top:0; }
-  .log .sx { display:inline-flex; color:var(--dim); margin-left:4px; } .log .sx:hover { color:var(--fg, #e2e6ee); }
-  .log .sx svg { width:12px; height:12px; }
-  .log .more { align-self:center; margin-top:6px; font-size:12px; }
-  .tag { font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; white-space:nowrap; flex:0 0 auto; }
-  .tag.sim { background:#2e1065; color:#c4b5fd; } .tag.live { background:#450a0a; color:#fca5a5; }
-  .tag.buy { background:#052e1c; color:#6ee7b7; } .tag.sell { background:#3b0a0a; color:#fca5a5; } .tag.wd { background:#1e293b; color:#cbd5e1; }
-  .pos { margin-top:8px; padding-top:8px; border-top:1px solid var(--line); }
-  .up { color:var(--ok); } .down { color:var(--bad); }
-  a { color:#93c5fd; text-decoration:none; }
-
-  .field { display:flex; flex-direction:column; gap:4px; }
-  .field label { font-size:11px; color:var(--mut); }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-  .check { display:flex; align-items:center; gap:8px; font-size:12px; }
-  .check input { width:auto; }
-  details summary { cursor:pointer; color:var(--mut); font-size:12px; list-style:none; }
-  details summary::before { content:'▸ '; } details[open] summary::before { content:'▾ '; }
-
-
-  .acclist { max-height:132px; overflow:auto; border:1px solid var(--line); border-radius:8px; background:var(--panel2); }
-  .acclist > div { display:flex; justify-content:space-between; gap:8px; padding:5px 9px; font-size:12px; border-bottom:1px solid var(--line); }
-  .acclist > div:last-child { border-bottom:0; }
-  .subsec { border-top:1px solid var(--line); padding-top:12px; margin-top:2px; }
-  .subhead { font-size:12px; font-weight:600; color:#e2e6ee; display:flex; align-items:center; gap:6px; margin-bottom:2px; }
-  .inset { margin-top:8px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px; }
-  .inset input { background:var(--panel); }
-  .msg { font-size:12px; min-height:16px; }
-  .msg:empty { display:none; }
-  .secret { background:#1a1410; border:1px solid #4a3410; border-radius:8px; padding:8px; word-break:break-all; font:11px ui-monospace,Menlo,monospace; color:#fcd34d; }
-  .stepper { display:flex; gap:6px; align-items:center; justify-content:center; padding:2px 0 4px; }
-  .stepper i { width:6px; height:6px; border-radius:999px; background:#2b3140; transition:width .2s, background .2s; }
-  .stepper i.done { background:#3b5b9a; }
-  .stepper i.cur { width:20px; background:var(--acc); }
-  .bullets { margin:0; padding-left:16px; display:flex; flex-direction:column; gap:3px; }
-  .keystat { font-size:12px; min-height:16px; display:flex; align-items:center; gap:6px; }
-  .keystat::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--dim); }
-  .keystat.ok { color:var(--ok); } .keystat.ok::before { background:var(--ok); }
-  .keystat.bad { color:var(--bad); } .keystat.bad::before { background:var(--bad); }
-  .keystat.busy { color:var(--mut); } .keystat.busy::before { background:var(--warn); }
-  .keystat:empty::before { display:none; }
   .row input { flex:1; min-width:0; }
+  .row > input ~ .btn { height:40px; }
   .row.wrap { flex-wrap:wrap; }
-  .btn:disabled { opacity:.45; cursor:not-allowed; }
-  .step.done > div:last-child { color:var(--mut); }
-  .pill.warnpill { color:var(--warn); border-color:#4a3a12; background:#1c160a; }
+  .stack { display:flex; flex-direction:column; gap:10px; }
   .trow { display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .ttl { font-weight:600; font-size:13px; margin-bottom:2px; }
-  .sub { border-top:1px solid var(--line); padding-top:10px; }
+  .lrow { display:flex; justify-content:space-between; align-items:center; }
+
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:36px; padding:0 14px; border:0; border-radius:var(--te-r); background:var(--te-surface-2); color:var(--te-fg); font-size:13px; font-weight:600; white-space:nowrap; transition:background .15s, color .15s, box-shadow .15s, transform .1s var(--te-ease); }
+  .btn:hover { background:var(--te-surface-3); }
+  .btn:active:not(:disabled) { transform:scale(.97); }
+  .btn.primary { background:var(--te-accent); color:var(--te-on-accent); }
+  .btn.primary:hover { background:var(--te-accent-hover); }
+  .btn.ghost { background:transparent; color:var(--te-muted); }
+  .btn.ghost:hover { color:var(--te-fg); }
+  .btn.live { background:var(--te-live); color:var(--te-on-fill); }
+  .btn.live:hover { background:var(--te-live-hover); }
+  .btn.danger { background:var(--te-sell-soft); color:var(--te-sell); }
+  .btn.danger:hover { box-shadow:inset 0 0 0 1px var(--te-live-line); }
+  .btn.block { width:100%; height:44px; border-radius:var(--te-r-md); font-size:15px; }
+  .btn.sm { height:28px; padding:0 10px; border-radius:var(--te-r-sm); font-size:12px; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .hlink { align-self:flex-start; display:inline-flex; align-items:center; gap:3px; font-size:11px; color:var(--te-link); text-decoration:none; }
+  .hlink:hover { color:var(--te-link-hover); }
+  .hlink svg { width:11px; height:11px; }
+  a, .link { color:var(--te-accent); text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--te-accent-glow); }
+  a:hover, .link:hover { color:var(--te-accent-hover); text-decoration-color:currentColor; }
+  .link { background:none; border:0; padding:0; font-size:12px; font-weight:600; }
+
+  /* one-job pages */
+  .page { gap:12px; padding:16px 24px 24px; }
+  .page.ob { padding-bottom:0; }
+  .phead { display:flex; flex-direction:column; align-items:center; text-align:center; padding:12px 0 6px; }
+  .phead h2 { margin:0; font-size:20px; font-weight:700; letter-spacing:-.3px; line-height:1.3; }
+  .phead p { margin:6px 0 0; font-size:13px; color:var(--te-muted); }
+  .phead p b { color:var(--te-fg); font-weight:600; }
+  .phead .pill { margin-bottom:8px; }
+  .ptile { width:44px; height:44px; display:grid; place-items:center; margin-bottom:12px; border-radius:var(--te-r-md); background:var(--te-accent-soft); color:var(--te-accent); }
+  .ptile svg { width:22px; height:22px; }
+  .stepper { display:flex; gap:6px; align-items:center; justify-content:center; }
+  .stepper i { width:6px; height:6px; border-radius:999px; background:var(--te-surface-3); transition:width .2s, background .2s; }
+  .stepper i.done { background:var(--te-accent-glow); }
+  .stepper i.cur { width:20px; background:var(--te-accent); }
+  .ob > .stepper { margin-top:auto; position:sticky; bottom:0; padding:16px 0 22px; background:var(--te-bg); }
+  .choice { display:flex; flex-direction:column; gap:8px; }
+  .choice button { display:flex; align-items:center; gap:12px; min-height:64px; padding:12px 14px; text-align:left; border:0; border-radius:var(--te-r-lg); background:var(--te-surface); box-shadow:inset 0 0 0 1px var(--te-line); transition:background .15s, transform .1s var(--te-ease); }
+  .choice button:hover { background:var(--te-surface-2); }
+  .choice button:active { transform:scale(.98); }
+  .itile { width:38px; height:38px; flex:0 0 38px; display:grid; place-items:center; border-radius:var(--te-r); background:var(--te-accent-soft); color:var(--te-accent); }
+  .itile svg { width:20px; height:20px; }
+  .ctext { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .ctext b { font-size:15px; font-weight:600; }
+  .ctext span { font-size:12px; color:var(--te-muted); }
+  .chev { width:16px; height:16px; flex:0 0 16px; color:var(--te-muted); }
+  .more summary { text-align:center; }
+  .more[open] summary { margin-bottom:8px; }
+  .addr { align-self:center; max-width:100%; padding:5px 12px; border-radius:999px; background:var(--te-surface-2); color:var(--te-muted); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .addr:empty { display:none; }
+
+  /* callouts: info (default), warn, danger. .warnbox and .secretwrap come from translated strings and popup.js */
+  .callout, .warnbox { position:relative; padding:12px 12px 12px 36px; border-radius:var(--te-r-md); font-size:12.5px; line-height:1.5; background:var(--te-surface-2); color:var(--te-muted); }
+  .callout::before, .warnbox::before { content:''; position:absolute; left:12px; top:13px; width:16px; height:16px; background:var(--te-accent); -webkit-mask:var(--ic-info) center/16px no-repeat; mask:var(--ic-info) center/16px no-repeat; }
+  .callout.warn, .warnbox { background:var(--te-warn-soft); color:var(--te-warn); }
+  .callout.warn::before, .warnbox::before { background:currentColor; -webkit-mask-image:var(--ic-warn); mask-image:var(--ic-warn); }
+  .callout.danger, .modal.danger .warnbox { background:var(--te-live-soft); color:var(--te-sell); }
+  .callout:empty { display:none; }
+  .secretwrap { position:relative; padding:12px 40px 12px 12px; border-radius:var(--te-r-md); background:var(--te-warn-soft); }
+  .secret { word-break:break-all; font:12px/1.55 var(--te-mono); color:var(--te-warn); }
+  .secretwrap .cp { position:absolute; top:0; bottom:0; right:8px; margin:auto 0; color:var(--te-warn); }
+  .todo { display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:var(--te-r-md); background:var(--te-surface-2); }
+  .todohead { font-size:12px; font-weight:600; color:var(--te-fg); }
+  .steps { display:flex; flex-direction:column; gap:8px; }
+  .step { display:flex; gap:10px; align-items:flex-start; font-size:12.5px; }
+  .step > div:last-child { padding-top:1px; }
+  .step.done > div:last-child { color:var(--te-muted); }
+  .step .link { margin-left:6px; }
+  .dot { flex:0 0 20px; height:20px; border-radius:50%; box-shadow:inset 0 0 0 1px var(--te-line-strong); display:grid; place-items:center; font-size:11px; font-weight:700; color:var(--te-muted); }
+  .dot.done { background:var(--te-buy-soft); box-shadow:none; color:var(--te-buy); }
+
+  /* home */
+  .wallet { display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 14px 14px; }
+  .wtop { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; }
+  .wtop .pill { height:28px; padding:0 11px; }
+  .bal { font-size:30px; font-weight:700; letter-spacing:-.6px; line-height:1.15; white-space:nowrap; }
+  .bal small { font-size:15px; font-weight:600; letter-spacing:0; color:var(--te-muted); }
+  .wallet .btn.block { margin-top:2px; }
+  .addrchip { display:inline-flex; align-items:center; gap:2px; height:28px; padding:0 2px 0 11px; border-radius:999px; background:var(--te-surface-2); color:var(--te-fg); white-space:nowrap; }
+  .addrchip.full { display:flex; justify-content:space-between; height:40px; padding:0 8px 0 12px; border-radius:var(--te-r); }
+  .addrchip.full .mono { font-size:10px; letter-spacing:-.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .pill { display:inline-flex; align-items:center; gap:4px; height:22px; padding:0 9px; border-radius:999px; font-size:11px; font-weight:600; background:var(--te-surface-2); color:var(--te-muted); white-space:nowrap; }
+  .pill.warnpill { background:var(--te-warn-soft); color:var(--te-warn); }
+  .cp { border:0; background:transparent; color:var(--te-muted); width:24px; height:24px; border-radius:50%; padding:0; display:inline-grid; place-items:center; cursor:pointer; flex:0 0 24px; transition:background .15s, color .15s, transform .1s var(--te-ease); }
+  .cp:hover { background:var(--te-surface-3); color:var(--te-fg); }
+  .cp svg { width:14px; height:14px; }
+  .cp.done { color:var(--te-ok); }
+  .tok { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .tokimg { position:relative; overflow:hidden; width:44px; height:44px; flex:0 0 44px; border-radius:var(--te-r); background:var(--te-surface-2); display:grid; place-items:center; font-weight:700; color:var(--te-fg); font-size:14px; }
+  .tokimg img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .tokhead { display:flex; align-items:center; gap:6px; min-width:0; }
+  .tokname { font-weight:700; font-size:15px; color:var(--te-fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ticker { flex:0 0 auto; font-size:11px; font-weight:700; color:var(--te-muted); background:var(--te-surface-2); border-radius:var(--te-r-xs); padding:1px 6px; }
+  .tokaddr { display:flex; align-items:center; gap:2px; margin-top:2px; font:12px var(--te-mono); color:var(--te-muted); }
+  .tiles { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:8px; margin-bottom:12px; }
+  .tile { min-width:0; padding:10px 12px; border-radius:var(--te-r); background:var(--te-surface-2); }
+  .tile .k { font-size:11px; font-weight:600; color:var(--te-muted); }
+  .tile .v { margin-top:2px; font-size:15px; font-weight:600; color:var(--te-fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tile .s { font-size:12px; font-weight:600; }
+  .tile .v.up, .tile .s.up, .up { color:var(--te-buy); } .tile .v.down, .tile .s.down, .down { color:var(--te-sell); }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-size:12.5px; margin:0; }
+  .kv dt { color:var(--te-muted); } .kv dd { margin:0; text-align:right; min-width:0; color:var(--te-fg); }
+  .kvbox { padding:12px; border-radius:var(--te-r-md); background:var(--te-surface-2); }
+  .log { display:flex; flex-direction:column; }
+  .log > div { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--te-line); font-size:12px; }
+  .log > div:first-child { border-top:0; padding-top:0; }
+  .log .sx { display:inline-flex; color:var(--te-dim); margin-left:2px; text-decoration:none; } .log .sx:hover { color:var(--te-fg); }
+  .log .sx svg { width:12px; height:12px; }
+  .log .more { align-self:center; margin-top:8px; }
+  .tag { display:inline-flex; align-items:center; height:18px; padding:0 6px; border-radius:var(--te-r-xs); font-size:11px; font-weight:700; white-space:nowrap; flex:0 0 auto; }
+  .tag.sim { background:var(--te-sim-soft); color:var(--te-sim); } .tag.live { background:var(--te-live-soft); color:var(--te-sell); }
+  .tag.buy { background:var(--te-buy-soft); color:var(--te-buy); } .tag.sell { background:var(--te-sell-soft); color:var(--te-sell); } .tag.wd { background:var(--te-surface-2); color:var(--te-muted); }
+
+  /* forms + settings */
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font-size:12px; font-weight:500; color:var(--te-muted); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .check { display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; }
+  details summary { cursor:pointer; color:var(--te-muted); font-size:12px; font-weight:600; list-style:none; }
+  details summary::-webkit-details-marker { display:none; }
+  details summary::before { content:'▸ '; } details[open] summary::before { content:'▾ '; }
+  details summary:hover { color:var(--te-fg); }
+  .acclist { max-height:132px; overflow:auto; border-radius:var(--te-r); background:var(--te-surface-2); }
+  .acclist > div { display:flex; justify-content:space-between; gap:8px; padding:7px 12px; font-size:12px; border-bottom:1px solid var(--te-line); }
+  .acclist > div:last-child { border-bottom:0; }
+  .subsec { border-top:1px solid var(--te-line); padding-top:12px; margin-top:2px; }
+  .subhead { font-size:13px; font-weight:600; color:var(--te-fg); display:flex; align-items:center; gap:6px; margin-bottom:2px; }
+  .inset { margin-top:10px; }
+  .msg { font-size:12px; min-height:16px; }
+  .msg:empty { display:none; }
+  .bullets { margin:0; padding-left:16px; display:flex; flex-direction:column; gap:4px; }
+  .keystat { font-size:12px; min-height:16px; display:flex; align-items:center; gap:6px; }
+  .keystat::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--te-dim); flex:0 0 7px; }
+  .keystat.ok { color:var(--te-ok); } .keystat.ok::before { background:var(--te-ok); }
+  .keystat.bad { color:var(--te-bad); } .keystat.bad::before { background:var(--te-bad); }
+  .keystat.busy { color:var(--te-muted); } .keystat.busy::before { background:var(--te-warn); }
+  .keystat:empty::before { display:none; }
+  .sub { border-top:1px solid var(--te-line); padding-top:12px; }
   input.narrow { width:76px; flex:0 0 76px; text-align:right; }
-  .tesw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--mut); cursor:pointer; }
+  .switch { position:relative; width:36px; height:20px; flex:0 0 36px; cursor:pointer; }
+  .switch input { opacity:0; width:0; height:0; position:absolute; }
+  .switch span { position:absolute; inset:0; background:var(--te-surface-3); border-radius:999px; transition:background .15s; }
+  .switch span::after { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; border-radius:50%; background:var(--te-muted); transition:transform .15s var(--te-ease), background .15s; }
+  .switch input:checked + span { background:var(--te-accent); }
+  .switch input:checked + span::after { transform:translateX(16px); background:var(--te-on-accent); }
+  .switch input:focus-visible + span { outline:2px solid var(--te-accent); outline-offset:2px; }
   .switch.sm { width:28px; height:16px; flex:0 0 28px; }
   .switch.sm span::after { width:12px; height:12px; }
   .switch.sm input:checked + span::after { transform:translateX(12px); }
-  .switch { position:relative; width:36px; height:20px; flex:0 0 36px; cursor:pointer; }
-  .switch input { opacity:0; width:0; height:0; position:absolute; }
-  .switch span { position:absolute; inset:0; background:var(--line); border-radius:999px; transition:background .15s; }
-  .switch span::after { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; border-radius:50%; background:#cbd2dd; transition:transform .15s; }
-  .switch input:checked + span { background:var(--acc); }
-  .switch input:checked + span::after { transform:translateX(16px); background:#fff; }
-  .switch input:focus-visible + span { outline:2px solid var(--acc); outline-offset:2px; }
-  .tok { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-  .tokimg { width:44px; height:44px; border-radius:10px; background:var(--panel2); object-fit:cover; flex:0 0 44px; display:grid; place-items:center; font-weight:700; color:var(--fg); font-size:14px; }
-  .tokimg { position:relative; overflow:hidden; }
-  .tokimg img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .tokhead { display:flex; align-items:center; gap:6px; min-width:0; }
-  .tokname { font-weight:700; font-size:16px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ticker { flex:0 0 auto; font-size:12px; font-weight:700; color:#93c5fd; background:#172036; border:1px solid #23314f; border-radius:6px; padding:1px 6px; }
-  .tokaddr { display:flex; align-items:center; gap:4px; margin-top:3px; font:12.5px ui-monospace,Menlo,monospace; color:#c3cad6; }
-  .cp { border:0; background:transparent; color:var(--mut); width:24px; height:24px; border-radius:6px; padding:0; display:inline-grid; place-items:center; cursor:pointer; flex:0 0 24px; }
-  .cp:hover { background:var(--panel2); color:var(--fg); }
-  .cp svg { width:14px; height:14px; }
-  .cp.done { color:var(--ok); }
-  .addrtop { margin:2px 0 8px; }
-  .walrow { justify-content:space-between; display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap; }
-  .walrow .bal { white-space:nowrap; }
-  .walright { display:flex; align-items:center; gap:6px; flex:0 0 auto; white-space:nowrap; margin-left:auto; } /* wraps below, still right-aligned, when the balance is long */
-  .addrchip { white-space:nowrap; display:inline-flex; align-items:center; gap:2px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:3px 3px 3px 9px; font-size:13px; color:#e2e6ee; }
-  .addrchip.full { display:flex; justify-content:space-between; font-size:10.5px; letter-spacing:-.1px; }
-  .addrchip.full { padding-left:8px; }
-  .addrchip.full .mono { font-size:10px; letter-spacing:-.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
-  .secretwrap { position:relative; }
-  .secretwrap .secret { padding-right:32px; }
-  .secretwrap .cp { position:absolute; top:4px; right:4px; color:#fcd34d; }
-  .lrow { display:flex; justify-content:space-between; align-items:center; }
-  .modal { position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:20px; background:rgba(5,7,11,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); animation:fadein .12s ease-out; }
-  .modal-card { width:100%; max-width:290px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,.6); animation:pop .14s ease-out; }
-  .modal-title { font-size:15px; font-weight:700; margin-bottom:6px; }
-  .modal-body { font-size:13px; color:var(--mut); line-height:1.5; margin-bottom:16px; }
-  .modal-body b { color:var(--fg); }
-  .modal-actions { display:flex; gap:8px; justify-content:flex-end; }
-  .modal-actions .btn { padding:8px 14px; }
-  .modal-body .warnbox { margin-top:8px; padding:8px 10px; border-radius:8px; background:#24150a; border:1px solid #4a2e10; color:#fbbf24; font-size:12px; }
-  .modal-body .secret { margin-top:6px; color:#fcd34d; }
-  .btn.live { background:var(--live); border-color:var(--live); color:#fff; }
-  .btn.live:hover { background:#dc2626; }
-  @keyframes fadein { from { opacity:0 } }
-  @keyframes pop { from { opacity:0; transform:scale(.96) } }
+
+  /* trays: bottom sheets inside the popup frame */
+  .modal { position:absolute; inset:0; z-index:50; display:flex; flex-direction:column; justify-content:flex-end; padding:8px; background:var(--te-backdrop); animation:te-dim .15s var(--te-ease); }
+  .modal-card { max-height:100%; overflow-y:auto; padding:18px 18px 14px; border-radius:var(--te-r-tray); background:var(--te-surface); box-shadow:inset 0 0 0 1px var(--te-line), var(--te-shadow-pop); animation:te-rise .26s var(--te-spring); }
+  .modal.danger .modal-card { box-shadow:inset 0 0 0 1px var(--te-live-line), var(--te-shadow-pop); }
+  .thead { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  .ticon { width:40px; height:40px; flex:0 0 40px; display:grid; place-items:center; border-radius:var(--te-r); background:var(--te-live-soft); color:var(--te-sell); }
+  .ticon svg { width:20px; height:20px; }
+  .modal:not(.danger) .ticon { display:none; }
+  .modal-title { flex:1; min-width:0; font-size:17px; font-weight:700; line-height:1.3; }
+  .thead .icon { width:30px; height:30px; flex-basis:30px; align-self:flex-start; margin:-4px -6px 0 0; }
+  .modal-body { font-size:13.5px; line-height:1.5; color:var(--te-muted); }
+  .modal-body b { color:var(--te-fg); }
+  .modal-body .warnbox, .modal-body .secretwrap { margin-top:10px; }
+  .modal-card > .kvbox, .modal-card > .callout { margin-top:12px; }
+  .modal-actions { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+  .modal-actions .btn { width:100%; height:46px; border-radius:var(--te-r-md); font-size:15px; }
+  #dlgPwField { margin-top:12px; }
+  #dlgMsg { margin-top:8px; }
+
+  @keyframes te-fwd { from { opacity:0; transform:translateX(14px); } }
+  @keyframes te-back { from { opacity:0; transform:translateX(-14px); } }
+  @keyframes te-fade { from { opacity:0; } }
+  @keyframes te-dim { from { background-color:transparent; } }
+  @keyframes te-rise { from { transform:translateY(24px); } }
+  @media (prefers-reduced-motion: reduce) {
+    body[data-dir] main, .modal-card { animation-name:te-fade; }
+    .btn:active:not(:disabled), .icon:active, .cp:active, .seg button:active, .choice button:active { transform:none; }
+  }
 </style>
 </head>
 <body>
@@ -200,115 +271,104 @@
 
 <div id="dlg" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
   <div class="modal-card">
-    <div class="modal-title" id="dlgTitle"></div>
+    <div class="thead"><div class="ticon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div><div class="modal-title" id="dlgTitle"></div><button class="icon tx" title="닫기" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="modal-body" id="dlgBody"></div>
-    <div class="field hidden" id="dlgPwField" style="margin:-6px 0 14px"><input id="dlgPw" type="password" placeholder="잠금 비밀번호" autocomplete="current-password"></div>
-    <div class="msg" id="dlgMsg" style="margin:-8px 0 10px"></div>
-    <div class="modal-actions"><button class="btn ghost" id="dlgNo">취소</button><button class="btn" id="dlgYes"></button></div>
+    <div class="field hidden" id="dlgPwField"><input id="dlgPw" type="password" placeholder="잠금 비밀번호" autocomplete="current-password"></div>
+    <div class="msg" id="dlgMsg"></div>
+    <div class="modal-actions"><button class="btn primary" id="dlgYes"></button><button class="btn" id="dlgNo">취소</button></div>
   </div>
 </div>
-<div id="liveConfirm" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="lcTitle">
+<div id="liveConfirm" class="modal danger hidden" role="dialog" aria-modal="true" aria-labelledby="lcTitle">
   <div class="modal-card">
-    <div class="modal-title" id="lcTitle">LIVE 모드로 전환할까요?</div>
-    <div class="modal-body">이제 주문이 실제로 전송됩니다.<br>1회 최대 <b id="lcMax">-</b> SOL</div>
-    <div class="modal-actions"><button class="btn ghost" id="lcNo">취소</button><button class="btn live" id="lcYes">LIVE로 전환</button></div>
+    <div class="thead"><div class="ticon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div><div class="modal-title" id="lcTitle">LIVE 모드로 전환할까요?</div><button class="icon tx" title="닫기" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body">이제 주문이 실제로 전송됩니다.</div>
+    <dl class="kv kvbox"><dt>1회 최대</dt><dd><b id="lcMax">-</b> SOL</dd></dl>
+    <div class="modal-actions"><button class="btn live" id="lcYes">LIVE로 전환</button><button class="btn" id="lcNo">취소</button></div>
   </div>
 </div>
 
 <!-- onboarding step: wallet -->
-<main id="vOnboard" class="hidden">
-  <div class="stepper" data-of="wallet"></div>
-  <div class="card stack">
-    <h3>지갑 준비</h3>
-    <div class="mut small">Tradeasy는 이 브라우저 안의 전용 지갑으로 직접 거래합니다. 소액만 넣어 쓰는 지갑을 권장합니다.</div>
-    <div class="choice">
-      <button id="chCreate"><b>새 지갑 만들기</b><span>새 주소를 생성합니다</span></button>
-      <button id="chImport"><b>기존 지갑 가져오기</b><span>private key 붙여넣기</span></button>
-    </div>
+<main id="vOnboard" class="hidden page ob">
+  <div class="phead"><h2>지갑 준비</h2><p>Tradeasy는 이 브라우저 안의 전용 지갑으로 직접 거래합니다. 소액만 넣어 쓰는 지갑을 권장합니다.</p></div>
+  <div class="choice">
+    <button id="chCreate"><span class="itile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="ctext"><b>새 지갑 만들기</b><span>새 주소를 생성합니다</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    <button id="chImport"><span class="itile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 20 3M16 7l3 3M18.5 4.5l2 2"/></svg></span><span class="ctext"><b>기존 지갑 가져오기</b><span>Private Key 붙여넣기</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
   </div>
   <div class="card stack hidden" id="importBox">
     <h3>기존 지갑 가져오기</h3>
-    <div class="field"><label>Private key (base58 또는 [1,2,...] 배열)</label><textarea id="importSk" spellcheck="false" placeholder="5Kd3..."></textarea></div>
-    <div class="row"><button class="btn primary" id="btnImport">가져오기</button><button class="btn ghost" id="btnImportCancel">취소</button></div>
+    <div class="field"><label>Private Key (base58 또는 [1,2,...] 배열)</label><textarea id="importSk" spellcheck="false" placeholder="5Kd3..."></textarea></div>
+    <div class="row"><button class="btn primary" id="btnImport" style="flex:1">가져오기</button><button class="btn ghost" id="btnImportCancel">취소</button></div>
   </div>
   <div class="msg" id="oMsg"></div>
+  <div class="stepper" data-of="wallet"></div>
 </main>
 
 <!-- onboarding step: extension lock (optional) -->
-<main id="vLockSetup" class="hidden">
+<main id="vLockSetup" class="hidden page ob">
+  <div class="phead"><span class="pill">선택</span><h2>잠금 비밀번호</h2>
+    <p>브라우저에서 Tradeasy를 여는 데 사용하는 비밀번호입니다.</p></div>
+  <details class="more"><summary>자세히</summary>
+    <div class="callout">
+      <ul class="bullets">
+        <li>브라우저를 다시 열거나 60분 동안 쓰지 않으면 Tradeasy가 잠깁니다. 잠긴 동안에는 Tradeasy 버튼으로 거래할 수 없습니다.</li>
+        <li>비밀번호는 어디에도 전송되지 않아 찾을 수 없습니다. 잊으면 Private Key로 지갑을 다시 가져와야 합니다.</li>
+        <li>잠금 없이 쓰면 팝업과 Tradeasy 버튼이 바로 동작합니다. 나중에 설정에서 켤 수 있습니다.</li>
+      </ul>
+    </div>
+  </details>
+  <div class="field"><label>비밀번호 (8자 이상)</label><input id="lsPw" type="password" autocomplete="new-password"></div>
+  <div class="field"><label>비밀번호 확인</label><input id="lsPw2" type="password" autocomplete="new-password"></div>
+  <div class="msg" id="lsMsg"></div>
+  <button class="btn primary block" id="btnLockSet">잠금 설정하고 계속</button>
+  <button class="btn ghost block" id="btnLockSkip">잠금 없이 계속</button>
   <div class="stepper" data-of="lock"></div>
-  <div class="card stack">
-    <h3>확장프로그램 잠금 비밀번호 <span class="pill">선택</span></h3>
-    <div class="small">Phantom, MetaMask의 잠금 비밀번호와 같은 기능입니다. 지갑 자체의 비밀번호가 아니라, <b>이 PC에서 Tradeasy를 여는 비밀번호</b>입니다.</div>
-    <ul class="bullets small mut">
-      <li>브라우저를 다시 열거나 60분 동안 쓰지 않으면 Tradeasy가 잠깁니다. 잠긴 동안에는 Tradeasy 버튼으로 거래할 수 없습니다.</li>
-      <li>이 PC에 저장되는 private key를 이 비밀번호로 암호화합니다.</li>
-      <li>비밀번호는 어디에도 전송되지 않아 찾을 수 없습니다. 잊으면 private key로 지갑을 다시 가져와야 합니다.</li>
-    </ul>
-    <div class="field"><label>비밀번호 (8자 이상)</label><input id="lsPw" type="password" autocomplete="new-password"></div>
-    <div class="field"><label>비밀번호 확인</label><input id="lsPw2" type="password" autocomplete="new-password"></div>
-    <div class="msg" id="lsMsg"></div>
-    <button class="btn primary block" id="btnLockSet">잠금 설정하고 계속</button>
-    <button class="btn ghost block" id="btnLockSkip">잠금 없이 계속</button>
-    <div class="dim small">잠금 없이 쓰면 팝업과 Tradeasy 버튼이 바로 동작하지만, key가 이 PC의 Chrome 프로필에 암호화 없이 저장됩니다. 나중에 설정에서 켤 수 있습니다.</div>
-  </div>
 </main>
 
 <!-- onboarding step: backup (new wallets only) -->
-<main id="vBackup" class="hidden">
+<main id="vBackup" class="hidden page ob">
+  <div class="phead"><h2>Private Key 백업</h2><p>아래 key를 안전한 곳에 저장하세요. 잃어버리면 자금을 되찾을 수 없습니다.</p></div>
+  <div class="secretwrap"><div class="secret" id="backupKey"></div><button class="cp" title="복사" aria-label="복사" data-copy-el="backupKey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+  <label class="check"><input id="backupChk" type="checkbox">안전한 곳에 저장했습니다</label>
+  <button class="btn primary block" id="btnBackupDone" disabled>계속</button>
   <div class="stepper" data-of="backup"></div>
-  <div class="card stack">
-    <h3>private key 백업</h3>
-    <div class="mut small">아래 key를 안전한 곳에 저장하세요. 이 key만 있으면 다른 지갑(Phantom 등)에서도 같은 지갑을 열 수 있고, 잃어버리면 자금을 되찾을 수 없습니다.</div>
-    <div class="secretwrap"><div class="secret" id="backupKey"></div><button class="cp" title="복사" aria-label="복사" data-copy-el="backupKey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
-    <label class="check"><input id="backupChk" type="checkbox">안전한 곳에 저장했습니다</label>
-    <button class="btn primary block" id="btnBackupDone" disabled>계속</button>
-  </div>
 </main>
 
 <!-- onboarding step: helius -->
-<main id="vHelius" class="hidden">
-  <div class="stepper" data-of="helius"></div>
-  <div class="card stack">
-    <h3>Helius 연결</h3>
-    <div class="field"><label class="lrow">Helius API key <a class="hlink" href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a></label>
-      <div class="row"><input id="obKey" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" spellcheck="false"><button class="btn" id="btnObConnect">연결</button></div>
-    </div>
-    <div class="keystat" id="obKeyStat"></div>
-    <button class="btn primary block" id="btnObDone" disabled>완료</button>
-    <button class="btn ghost block" id="btnObLater">나중에 하기</button>
+<main id="vHelius" class="hidden page ob">
+  <div class="phead"><h2>Helius 연결</h2></div>
+  <div class="field"><label>Helius API key</label>
+    <div class="row"><input id="obKey" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" spellcheck="false"><button class="btn" id="btnObConnect">연결</button></div>
+    <a class="hlink" href="https://dashboard.helius.dev" target="_blank" rel="noopener">Helius API key 받으러 가기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a>
   </div>
+  <div class="keystat" id="obKeyStat"></div>
+  <button class="btn primary block" id="btnObDone" disabled>완료</button>
+  <button class="btn ghost block" id="btnObLater">나중에 하기</button>
+  <div class="stepper" data-of="helius"></div>
 </main>
 
 <!-- extension lock is on and locked -->
-<main id="vLocked" class="hidden">
-  <div class="card stack">
-    <h3>Tradeasy 잠김</h3>
-    <div class="mut small">확장프로그램 잠금 비밀번호를 입력하세요.</div>
-    <div class="addr mono small" id="lockedAddr"></div>
-    <input id="unlockPw" type="password" placeholder="잠금 비밀번호">
-    <button class="btn primary block" id="btnUnlock">잠금 해제</button>
-    <div class="msg" id="lMsg"></div>
-    <div class="dim small">비밀번호를 잊었다면 확장프로그램을 삭제 후 다시 설치하고, private key로 지갑을 가져오세요.</div>
-  </div>
+<main id="vLocked" class="hidden page">
+  <div class="phead"><div class="ptile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h2>Tradeasy 잠김</h2><p>잠금 비밀번호를 입력하세요.</p></div>
+  <div class="addr mono" id="lockedAddr"></div>
+  <input id="unlockPw" type="password" placeholder="잠금 비밀번호">
+  <div class="msg" id="lMsg"></div>
+  <button class="btn primary block" id="btnUnlock">잠금 해제</button>
+  <div class="callout">비밀번호를 잊었다면 확장프로그램을 삭제 후 다시 설치하고, private key로 지갑을 가져오세요.</div>
 </main>
 
 <main id="vHome" class="hidden">
-  <div class="card">
-    <h3>지갑 <span class="pill" id="lockPill">잠금 없음</span></h3>
-    <div class="addrchip addrtop"><span class="mono" id="addrShort"></span><button class="cp" title="복사" aria-label="복사" data-copy-el="addrFull"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
-    <div class="walrow">
-      <div class="bal" id="bal">- <small>SOL</small></div>
-      <button class="btn sm" id="btnSendOpen">출금</button>
-    </div>
+  <div class="card wallet">
+    <div class="wtop"><div class="addrchip"><span class="mono" id="addrShort"></span><button class="cp" title="복사" aria-label="복사" data-copy-el="addrFull"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div><span class="pill" id="lockPill">잠금 없음</span></div>
+    <div class="bal" id="bal">- <small>SOL</small></div>
+    <button class="btn block" id="btnSendOpen">출금</button>
     <span id="addrFull" class="hidden"></span>
   </div>
 
   <div class="todo" id="todo">
-    <div class="small mut" id="todoHead">시작 체크리스트</div>
+    <div class="todohead" id="todoHead">시작 체크리스트</div>
     <div class="steps">
       <div class="step" id="stKey"><div class="dot" id="tdKey">1</div><div><span id="tdKeyText">Helius 연결</span> <button class="link" data-goto="settings" id="tdKeyGo">설정 열기 ›</button>
-        <div class="small" id="tdKeySub"><a href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a></div></div></div>
+        <div class="small" id="tdKeySub"></div></div></div>
       <div class="step" id="stFund"><div class="dot" id="tdFund">2</div><div>위 주소로 SOL 입금 (0.05 SOL 정도로 시작)</div></div>
       <div class="step" id="stSim"><div class="dot" id="tdSim">3</div><div>토큰 페이지에서 Tradeasy 배지로 simulate 해보기</div></div>
     </div>
@@ -325,26 +385,27 @@
   </div>
 </main>
 
-<main id="vSend" class="hidden">
-  <div class="card stack" id="sendForm">
+<main id="vSend" class="hidden page">
+  <div class="stack" id="sendForm">
     <div class="field"><label>받는 주소 (Solana)</label><input id="sendTo" placeholder="받을 지갑 또는 거래소 SOL 입금 주소" spellcheck="false" autocomplete="off"></div>
     <div class="field"><label>금액 (SOL) <span class="dim" id="sendAvail"></span></label>
       <div class="row"><input id="sendAmt" type="number" step="0.001" min="0" placeholder="0.0"><button class="btn" id="btnSendMax">최대</button></div>
     </div>
-    <div class="dim small">SIMULATE 모드와 관계없이 실제로 전송됩니다. 토큰은 보낼 수 없고 SOL만 보냅니다.</div>
+    <div class="callout warn">SIMULATE 모드와 관계없이 실제로 전송됩니다. 토큰은 보낼 수 없고 SOL만 보냅니다.</div>
     <div class="msg" id="sendMsg"></div>
     <button class="btn primary block" id="btnSendNext">다음</button>
   </div>
-  <div class="card stack hidden" id="sendConfirm">
-    <h3>보내기 전에 확인하세요</h3>
-    <dl class="kv"><dt>받는 주소</dt><dd class="mono small" id="scTo" style="word-break:break-all"></dd><dt>금액</dt><dd id="scAmt"></dd><dt>네트워크 수수료</dt><dd id="scFee"></dd><dt>보낸 후 잔고</dt><dd id="scLeft"></dd></dl>
-    <div class="warn small" id="scNew"></div>
-    <div class="small mut">블록체인 전송은 되돌릴 수 없습니다. 거래소 주소라면 Solana(SOL) 네트워크 입금 주소인지 확인하세요.</div>
-    <div class="row"><button class="btn primary" id="btnSendGo">보내기</button><button class="btn ghost" id="btnSendBack">수정</button></div>
+  <div id="sendConfirm" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="scTitle">
+    <div class="modal-card">
+      <div class="thead"><div class="modal-title" id="scTitle">보내기 전에 확인하세요</div><button class="icon tx" title="닫기" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">블록체인 전송은 되돌릴 수 없습니다. 거래소 주소라면 Solana(SOL) 네트워크 입금 주소인지 확인하세요.</div>
+      <dl class="kv kvbox"><dt>받는 주소</dt><dd class="mono small" id="scTo" style="word-break:break-all"></dd><dt>금액</dt><dd id="scAmt"></dd><dt>네트워크 수수료</dt><dd id="scFee"></dd><dt>보낸 후 잔고</dt><dd id="scLeft"></dd></dl>
+      <div class="callout warn" id="scNew"></div>
+      <div class="modal-actions"><button class="btn primary" id="btnSendGo">보내기</button><button class="btn" id="btnSendBack">수정</button></div>
+    </div>
   </div>
-  <div class="card stack hidden" id="sendDone">
-    <h3 id="sdTitle">전송 중</h3>
-    <div id="sdBody" class="small"></div>
+  <div class="stack hidden" id="sendDone">
+    <div class="phead"><h2 id="sdTitle">전송 중</h2><p id="sdBody"></p></div>
     <button class="btn block" id="btnSendClose">홈으로</button>
   </div>
 </main>
@@ -352,8 +413,9 @@
 <main id="vSettings" class="hidden">
   <div class="card stack">
     <h3>Helius 연결</h3>
-    <div class="field"><label class="lrow">Helius API key <a class="hlink" href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a></label>
+    <div class="field"><label>Helius API key</label>
       <div class="row"><input id="heliusApiKey" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" spellcheck="false"><button class="btn" id="btnConnect">연결</button></div>
+      <a class="hlink" href="https://dashboard.helius.dev" target="_blank" rel="noopener">Helius API key 받으러 가기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a>
     </div>
     <div class="keystat" id="keyStat"></div>
   </div>
@@ -370,7 +432,7 @@
       </div>
     </div>
     <details class="subsec"><summary>고급</summary>
-      <div class="stack" style="margin-top:8px">
+      <div class="stack" style="margin-top:10px">
         <div class="field"><label>CU limit</label><input id="cuLimit" type="number" step="10000" min="50000"></div>
         <label class="check"><input id="ignoreMev" type="checkbox">터미널 MEV 설정 무시</label>
         <div class="field"><label>RPC URL 직접 지정 (비우면 Helius)</label><input id="customRpcUrl" placeholder="https://..." spellcheck="false"></div>
@@ -386,11 +448,13 @@
     </div>
     <!-- turning on -->
     <div class="stack sub hidden" id="lkOn">
-      <ul class="bullets small mut">
-        <li>Phantom, MetaMask의 잠금 비밀번호와 같은 기능입니다.</li>
-        <li>브라우저를 다시 열거나 자동 잠금 시간이 지나면 비밀번호를 묻고, 잠긴 동안에는 Tradeasy 버튼으로 거래할 수 없습니다.</li>
-        <li>private key를 이 비밀번호로 암호화합니다. 잊으면 찾을 수 없습니다.</li>
-      </ul>
+      <div class="callout">
+        <ul class="bullets">
+          <li>Phantom, MetaMask의 잠금 비밀번호와 같은 기능입니다.</li>
+          <li>브라우저를 다시 열거나 자동 잠금 시간이 지나면 비밀번호를 묻고, 잠긴 동안에는 Tradeasy 버튼으로 거래할 수 없습니다.</li>
+          <li>비밀번호를 잊으면 찾을 수 없습니다.</li>
+        </ul>
+      </div>
       <div class="grid2">
         <div class="field"><label>비밀번호 (8자 이상)</label><input id="nextPw" type="password" autocomplete="new-password"></div>
         <div class="field"><label>비밀번호 확인</label><input id="nextPw2" type="password" autocomplete="new-password"></div>
@@ -399,7 +463,6 @@
     </div>
     <!-- turning off -->
     <div class="stack sub hidden" id="lkOff">
-      <div class="small mut">잠금을 끄면 private key가 암호화 없이 저장됩니다.</div>
       <div class="field"><label>현재 잠금 비밀번호</label><input id="offPw" type="password" autocomplete="current-password"></div>
       <div class="row"><button class="btn danger" id="btnLkOff">잠금 끄기</button><button class="btn ghost" data-lkcancel>취소</button></div>
     </div>

@@ -147,11 +147,11 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await pop.waitForTimeout(300);
   const backupKeyLen = (await pop.textContent('#backupKey')).length;
   const doneDisabled = await pop.isDisabled('#btnBackupDone');
-  await pop.screenshot({ path: path.join(OUT, 'popup-1-backup.png') });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-1-backup.png') });
   await pop.check('#backupChk');
   await pop.click('#btnBackupDone');
   await pop.waitForSelector('#vLockSetup:not(.hidden)', { timeout: 10000 });
-  await pop.screenshot({ path: path.join(OUT, 'popup-2-lock.png'), fullPage: true });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-2-lock.png'), fullPage: true });
   if (process.env.PW) {
     await pop.fill('#lsPw', process.env.PW); await pop.fill('#lsPw2', process.env.PW + 'x'); await pop.click('#btnLockSet');
     var mismatchMsg = await pop.textContent('#lsMsg');
@@ -166,7 +166,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await pop.fill('#obKey', 'test-key_123');
   await pop.waitForSelector('#obKeyStat.ok', { timeout: 10000 });
   const okStat = await pop.textContent('#obKeyStat');
-  await pop.screenshot({ path: path.join(OUT, 'popup-3-helius.png') });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-3-helius.png') });
   await pop.click('#btnObDone');
   await pop.waitForSelector('#vHome:not(.hidden)', { timeout: 10000 });
   await pop.waitForTimeout(500);
@@ -174,13 +174,13 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   walletPub = await pop.evaluate(() => chrome.storage.local.get('vault').then((s) => s.vault.pubkey));
   const todoHead = await pop.textContent('#todoHead');
   const keyStep = await pop.textContent('#stKey');
-  await pop.screenshot({ path: path.join(OUT, 'popup-4-home.png') });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-4-home.png') });
   await pop.click('#btnGear');
   await pop.waitForSelector('#keyStat.ok', { timeout: 10000 });
   const hlinkHiddenWhenConnected = await pop.isHidden('#vSettings .hlink');
   await pop.waitForFunction(() => /회수 가능|없습니다|못했|reclaim|Nothing|Could not/.test(document.querySelector('#accSum').textContent), null, { timeout: 10000 });
   const accBefore = (await pop.innerText('#accCard')).replace(/\s+/g, ' ');
-  await pop.screenshot({ path: path.join(OUT, 'popup-5-settings.png'), fullPage: true });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-5-settings.png'), fullPage: true });
   await pop.click('#btnAccClose');
   const accDialog = (await pop.innerText('#dlg .modal-card')).replace(/\s+/g, ' ');
   await pop.click('#dlgYes');
@@ -190,18 +190,18 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   if (!process.env.PW) {
     await pop.click('#secCard .switch');
     const panelOpen = await pop.isVisible('#lkOn');
-    await pop.screenshot({ path: path.join(OUT, 'popup-5b-lock-on.png'), fullPage: true });
+    await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-5b-lock-on.png'), fullPage: true });
     await pop.fill('#nextPw', 'abcdefgh1'); await pop.fill('#nextPw2', 'abcdefgh1'); await pop.click('#btnLkOn');
     await pop.waitForTimeout(800);
     const onDesc = await pop.textContent('#secDesc'); const onMsg = await pop.textContent('#secMsg');
-    await pop.screenshot({ path: path.join(OUT, 'popup-5c-lock-enabled.png'), fullPage: true });
+    await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-5c-lock-enabled.png'), fullPage: true });
     await pop.click('#secCard .switch'); await pop.fill('#offPw', 'wrongpass'); await pop.click('#btnLkOff'); await pop.waitForTimeout(800);
     const wrongMsg = await pop.textContent('#secMsg');
     await pop.fill('#offPw', 'abcdefgh1'); await pop.click('#btnLkOff'); await pop.waitForTimeout(800);
     lockTest = { panelOpen, onDesc, onMsg, wrongMsg, offDesc: await pop.textContent('#secDesc'), toggle: await pop.isChecked('#lockToggle') };
   }
   await pop.click('#btnBack');
-  if (process.env.LIVE) { await pop.click('#modeSeg button[data-mode=live]'); await pop.waitForTimeout(250); await pop.setViewportSize({ width: 360, height: 560 }); await pop.screenshot({ path: path.join(OUT, 'popup-live-dialog.png') }); await pop.setViewportSize({ width: 1280, height: 720 }); await pop.click('#lcYes'); await pop.waitForTimeout(300); }
+  if (process.env.LIVE) { await pop.click('#modeSeg button[data-mode=live]'); await pop.waitForTimeout(250); await pop.setViewportSize({ width: 360, height: 600 }); await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-live-dialog.png') }); await pop.setViewportSize({ width: 1280, height: 720 }); await pop.click('#lcYes'); await pop.waitForTimeout(300); }
   const sMsg = { lockTest, doneDisabled, badStat, okStat, todoHead, keyStep, mismatchMsg: typeof mismatchMsg === 'undefined' ? null : mismatchMsg };
 
   // token page
@@ -303,7 +303,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await pop.click('#btnSendNext');
   await pop.waitForSelector('#sendConfirm:not(.hidden)', { timeout: 8000 });
   const sendConfirmText = (await pop.innerText('#sendConfirm')).replace(/\s+/g, ' ');
-  await pop.screenshot({ path: path.join(OUT, 'popup-7-send-confirm.png') });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-7-send-confirm.png') });
   await pop.click('#btnSendGo');
   await pop.waitForFunction(() => !/전송 중|Sending/.test(document.querySelector('#sdTitle').textContent), null, { timeout: 15000 });
   const sendDone = (await pop.innerText('#sendDone')).replace(/\s+/g, ' ');
@@ -313,10 +313,10 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   await pop.click('#btnBack');
   const withdraw = { sendConfirmText, sendDone, sendBad };
   await pop.evaluate(async () => { const q = chrome.tabs.query; chrome.tabs.query = async () => [{ id: 1, url: 'https://axiom.trade/meme/x' }]; await renderSite(); chrome.tabs.query = q; });
-  await pop.screenshot({ path: path.join(OUT, 'popup-teswitch.png'), clip: { x: 0, y: 0, width: 360, height: 90 } });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-teswitch.png'), clip: { x: 0, y: 0, width: 360, height: 90 } });
   const cfgAfter = await pop.evaluate(() => chrome.storage.local.get(null).then((s) => ({ hk: s.heliusApiKey, vaultPlain: !!(s.vault && s.vault.plain) })));
   await pop.waitForTimeout(3500);
-  await pop.screenshot({ path: path.join(OUT, 'popup-6-home-after.png'), fullPage: true });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-6-home-after.png'), fullPage: true });
   // log: old-style separate confirm entries fold in, 8 rows + "more"
   const logTest = await pop.evaluate(async () => {
     const S = (i) => 'SIG' + String(i).padStart(84, '1');
@@ -333,7 +333,7 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
     document.querySelector('#logMore').click(); await new Promise((r) => setTimeout(r, 300));
     return { rows, icons, more, rowsOpen: document.querySelectorAll('#log > div').length, first: document.querySelector('#log > div').innerText.replace(/\s+/g, ' ') };
   });
-  await pop.screenshot({ path: path.join(OUT, 'popup-6b-log.png'), fullPage: true });
+  await pop.screenshot({ animations: 'disabled', path: path.join(OUT, 'popup-6b-log.png'), fullPage: true });
   const langSwitch = await pop.evaluate(async () => {
     const before = TE_I18N.lang;
     await TE_I18N.setLang(before === 'en' ? 'ko' : 'en'); await new Promise((r) => setTimeout(r, 400));

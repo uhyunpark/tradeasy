@@ -1,0 +1,66 @@
+/* Tradeasy design tokens: Velvet & Pewter. Declarations only.
+   build.mjs inlines this into popup.html (:root) and the content.js overlay (#te-layer). */
+
+/* surfaces: each step is one layer up; separate layers by shade and a hairline, never a solid border */
+--te-bg: #141016;
+--te-surface: #1E1822;
+--te-surface-2: #29212E;
+--te-surface-3: #33293A;
+--te-line: rgba(255, 255, 255, 0.07);
+--te-line-strong: rgba(255, 255, 255, 0.12);
+--te-backdrop: rgba(0, 0, 0, 0.58);
+
+/* text */
+--te-fg: #F5EFF3;
+--te-muted: #A096A6;
+--te-dim: #857B8C;
+--te-on-fill: #FFFFFF; /* text on LIVE / SIM fills */
+
+/* pewter: Tradeasy's own actions (primary buttons, switches, focus, links). Near-neutral, so links keep an underline */
+--te-accent: #DCD3E2;
+--te-accent-hover: #EAE3EF;
+--te-accent-deep: #B3A8BC;
+--te-on-accent: #1A141D;
+--te-accent-soft: rgba(220, 211, 226, 0.12);
+--te-accent-glow: rgba(220, 211, 226, 0.35);
+--te-link: #8AB4F8;
+--te-link-hover: #AECBFA;
+
+/* cherry: rare moments only (onboarding done, backup confirmed), never on trading surfaces */
+--te-spark: #FF5C8A;
+
+/* meaning */
+--te-buy: #4ADE90;
+--te-buy-soft: rgba(74, 222, 144, 0.14);
+--te-sell: #FF6B6B;
+--te-sell-soft: rgba(255, 107, 107, 0.13);
+--te-live: #D92D3A;
+--te-live-hover: #C42433;
+--te-live-soft: rgba(255, 107, 107, 0.14);
+--te-live-line: rgba(255, 107, 107, 0.30);
+--te-sim: #A78BFA;
+--te-sim-fill: #6E4FD8;
+--te-sim-soft: rgba(167, 139, 250, 0.16);
+--te-warn: #FFB547;
+--te-warn-soft: rgba(255, 181, 71, 0.12);
+--te-ok: var(--te-buy);
+--te-bad: var(--te-sell);
+
+/* shape */
+--te-r-xs: 6px;
+--te-r-sm: 8px;
+--te-r: 12px;
+--te-r-md: 14px;
+--te-r-lg: 16px;
+--te-r-xl: 18px;
+--te-r-tray: 24px;
+--te-shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+/* type */
+--te-font: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', system-ui, sans-serif;
+--te-mono: ui-monospace, Menlo, monospace;
+
+/* motion */
+--te-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+--te-spring: cubic-bezier(0.15, 1.15, 0.6, 1);
+--te-dur: 200ms;

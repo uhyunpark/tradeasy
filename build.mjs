@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { mkdirSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, copyFileSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 
 const out = 'dist';
 rmSync(out, { recursive: true, force: true });
@@ -22,7 +22,14 @@ await esbuild.build({
   logLevel: 'warning',
 });
 
-for (const f of ['hook.js', 'content.js', 'popup.html', 'popup.js', 'i18n.js', 'i18n-en.js']) copyFileSync(`src/${f}`, `${out}/${f}`);
+for (const f of ['hook.js', 'popup.js', 'i18n.js', 'i18n-en.js']) copyFileSync(`src/${f}`, `${out}/${f}`);
+// design tokens: one source, inlined where the popup and the page overlay declare them
+const theme = readFileSync('src/theme.css', 'utf8');
+for (const f of ['popup.html', 'content.js']) {
+  const src = readFileSync(`src/${f}`, 'utf8');
+  if (!src.includes('/* @te-theme */')) throw new Error(`${f}: missing /* @te-theme */`);
+  writeFileSync(`${out}/${f}`, src.replace('/* @te-theme */', () => theme));
+}
 
 writeFileSync(`${out}/manifest.json`, JSON.stringify({
   manifest_version: 3,

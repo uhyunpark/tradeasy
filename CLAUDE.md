@@ -34,7 +34,8 @@ background (service worker) router, state cache, build/verify/sign/send/confirm,
 
 | File | Role |
 |---|---|
-| `build.mjs` | esbuild bundle of the background, copies static files, writes `dist/manifest.json`. Version lives here (and in `package.json`). |
+| `build.mjs` | esbuild bundle of the background, copies static files, inlines `src/theme.css` at `/* @te-theme */` in `popup.html` and `content.js`, writes `dist/manifest.json`. Version lives here (and in `package.json`). |
+| `src/theme.css` | Design tokens (`--te-*`, Velvet & Pewter), declarations only. The one place colors are defined. |
 | `src/hook.js` | MAIN world, `document_start`. Network/worker taps, fiber reads (`pairInfo.tokenAddress` of one-click rows), TradingView line. |
 | `src/content.js` | `ADAPTERS.axiom/gmgn` (URL mint regex, main button detection, preset parsing), Tradeasy mode (`classify`/`handle`, covers, chip fill), toasts, avg-line poll. Retires itself when the extension context is invalidated. |
 | `src/background/index.js` | Message router, per-tab watch map, periodic refresh + blockhash prefetch, trade log (20 trades, confirm merged into its send entry). |

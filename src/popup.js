@@ -33,6 +33,9 @@ const ago = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 6
 let W = null, C = null, OB = null, tab = 'home', liveAsk = false;
 const VIEWS = ['vOnboard', 'vLockSetup', 'vBackup', 'vHelius', 'vLocked', 'vHome', 'vSettings', 'vSend'];
 const OB_VIEW = { backup: 'vBackup', lock: 'vLockSetup', helius: 'vHelius' };
+// view-enter direction: going deeper slides in from the right, going back from the left
+const DEPTH = { vOnboard: 0, vBackup: 1, vLockSetup: 2, vHelius: 3, vLocked: 3, vHome: 4, vSettings: 5, vSend: 5 };
+let curView = null;
 
 async function load() {
   [W, C] = await Promise.all([send({ type: 'wallet:status' }), send({ type: 'config:get' })]);
@@ -61,7 +64,11 @@ function view() {
   else if (tab === 'send' && W.unlocked) v = 'vSend';
   else if (!W.unlocked) v = 'vLocked';
   else v = 'vHome';
+  const changed = v !== curView;
+  if (curView && changed) document.body.dataset.dir = DEPTH[v] < DEPTH[curView] ? 'back' : 'fwd'; // first paint: no animation
+  curView = v;
   VIEWS.forEach((x) => show(x, x === v));
+  if (changed) $(v).scrollTop = 0;
   const inSettings = v === 'vSettings' || v === 'vSend', setup = v === 'vOnboard' || !!OB_VIEW_REV[v];
   show('hHome', !inSettings); show('hSettings', inSettings);
   $('hTitle').textContent = v === 'vSend' ? T('SOL 출금') : T('설정');
@@ -148,7 +155,7 @@ $('chImport').onclick = () => { show('importBox', true); $('importSk').focus(); 
 $('btnImportCancel').onclick = () => { show('importBox', false); $('importSk').value = ''; };
 $('btnImport').onclick = async () => {
   const secret = $('importSk').value.trim();
-  if (!secret) return say('oMsg', T('private key를 붙여넣어 주세요'), 'warn');
+  if (!secret) return say('oMsg', T('Private Key를 붙여넣어 주세요'), 'warn');
   const r = await send({ type: 'wallet:create', secret });
   $('importSk').value = '';
   if (r.error) return say('oMsg', r.error, 'bad');
@@ -251,7 +258,7 @@ async function renderHome() {
   const keyDone = hasKey && !balErr;
   $('tdKeyText').textContent = keyDone ? T('Helius 연결됨') : hasKey ? T('Helius 연결 실패') : T('Helius 연결');
   if (hasKey && !keyDone) { $('tdKeySub').textContent = T('API key를 확인하세요'); $('tdKeySub').className = 'bad small'; }
-  else { $('tdKeySub').innerHTML = keyDone ? '' : '<a href="https://dashboard.helius.dev" target="_blank">dashboard.helius.dev</a>'; $('tdKeySub').className = 'small'; }
+  else { $('tdKeySub').textContent = ''; $('tdKeySub').className = 'small'; }
   show('tdKeyGo', !keyDone);
 
   const trades = await send({ type: 'trades:get' });
@@ -290,17 +297,26 @@ async function renderHome() {
       `<div class="tokaddr"><span>${esc(w.mint.slice(0, 6) + '…' + w.mint.slice(-6))}</span>${COPY_BTN(`data-copy="${esc(w.mint)}"`)}</div></div></div>`;
     if (hasKey && unsupported) html += T('<div class="small mut">Tradeasy가 아직 지원하지 않는 풀입니다 (Raydium AMM v4·CLMM, Meteora DLMM 등). 지원: pump.fun, PumpSwap, Meteora DBC·DAMM v2, Raydium LaunchLab·CPMM</div>');
     else if (hasKey && w.error && !s) html += `<div class="${unsupported ? 'warn' : 'bad'} small">${esc(w.friendly || w.error)}</div>`;
-    if (s) html += `<dl class="kv"><dt>${T('보유')}</dt><dd>${Number(s.tokenBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}${m.symbol ? ' ' + esc(m.symbol) : ''}</dd>` +
-      `<dt>${T('풀')}</dt><dd>${esc(T(POOL[s.venue] || s.venue))}</dd><dt>${T('갱신')}</dt><dd>${ago(s.at)}</dd></dl>`;
-    const P = w.position;
+    // main numbers as tiles (holding, PnL), the rest as a key-value list
+    const P = w.position, pool = s ? esc(T(POOL[s.venue] || s.venue)) : '';
+    const sol = (n) => (n == null ? '-' : n.toFixed(4) + ' SOL');
+    const tile = (k, v, cls = '', sub = '') => `<div class="tile"><div class="k">${k}</div><div class="v ${cls}" title="${v}">${v}</div>${sub ? `<div class="s ${cls}">${sub}</div>` : ''}</div>`;
+    const tiles = [], kv = [];
+    if (s) tiles.push(tile(T('보유'), Number(s.tokenBalance).toLocaleString(undefined, { maximumFractionDigits: 2 }) + (m.symbol ? ' ' + esc(m.symbol) : '')));
     if (P) {
-      const sol = (n) => (n == null ? '-' : n.toFixed(4) + ' SOL');
       const cls = P.pnl == null ? '' : P.pnl >= 0 ? 'up' : 'down';
       const sign = P.pnl > 0 ? '+' : '';
-      html += `<dl class="kv pos">` + (P.avgPrice ? `<dt>${T('평균 매수가')}</dt><dd>${fmtPrice(P.avgPrice)} SOL</dd>` : '') + `<dt>${T('투입')}</dt><dd>${sol(P.invested)}</dd>` + (P.returned > 0 ? `<dt>${T('회수')}</dt><dd>${sol(P.returned)}</dd>` : '') +
-        `<dt>${T('지금 팔면')}</dt><dd>${sol(P.value)}</dd><dt>${T('손익')}</dt><dd class="${cls}">${P.pnl == null ? '-' : `${sign}${P.pnl.toFixed(4)} SOL (${sign}${P.pnlPct.toFixed(1)}%)`}</dd></dl>` +
-        T('<div class="dim small" style="margin-top:4px">Tradeasy 지갑 LIVE 체결 기준</div>');
-    }
+      tiles.push(tile(T('손익'), P.pnl == null ? '-' : `${sign}${P.pnl.toFixed(4)} SOL`, cls, P.pnl == null ? '' : `${sign}${P.pnlPct.toFixed(1)}%`));
+      if (P.avgPrice) kv.push([T('평균 매수가'), `${fmtPrice(P.avgPrice)} SOL`]);
+      kv.push([T('투입'), sol(P.invested)]);
+      if (P.returned > 0) kv.push([T('회수'), sol(P.returned)]);
+      kv.push([T('지금 팔면'), sol(P.value)]);
+      if (s) kv.push([T('풀'), pool]);
+    } else if (s) tiles.push(tile(T('풀'), pool));
+    if (s) kv.push([T('갱신'), ago(s.at)]);
+    if (tiles.length) html += `<div class="tiles">${tiles.join('')}</div>`;
+    if (kv.length) html += `<dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+    if (P) html += T('<div class="dim small" style="margin-top:4px">Tradeasy 지갑 LIVE 체결 기준</div>');
     $('tokBody').innerHTML = html;
   }
 
@@ -338,7 +354,7 @@ async function renderHome() {
 let sendMax = false, sendPlan = null;
 function sendReset() {
   sendMax = false; sendPlan = null; $('sendTo').value = ''; $('sendAmt').value = ''; say('sendMsg', '');
-  show('sendForm', true); show('sendConfirm', false); show('sendDone', false);
+  show('sendForm', true); show('sendConfirm', false); show('sendDone', false); $('sendForm').inert = false;
   $('sendAvail').textContent = lastSol == null ? '' : T('· 잔고 {sol} SOL', { sol: lastSol.toFixed(4) });
 }
 $('btnSendOpen').onclick = () => { if (!(C.heliusApiKey || C.customRpcUrl)) { tab = 'settings'; return renderAll(); } tab = 'send'; liveAsk = false; sendReset(); renderAll(); };
@@ -355,12 +371,14 @@ $('btnSendNext').onclick = async () => {
   $('scFee').textContent = `${(r.fee / 1e9).toFixed(6)} SOL`;
   $('scLeft').textContent = `${((r.balance - r.lamports - r.fee) / 1e9).toFixed(6)} SOL`;
   $('scNew').textContent = r.newAccount ? T('이 주소는 아직 한 번도 쓰이지 않은 새 주소입니다. 주소를 다시 확인하세요.') : '';
-  show('sendForm', false); show('sendConfirm', true);
+  show('sendConfirm', true); $('sendForm').inert = true; // tray over the form; the form stays visible but inactive
 };
-$('btnSendBack').onclick = () => { show('sendConfirm', false); show('sendForm', true); };
+$('btnSendBack').onclick = () => { show('sendConfirm', false); $('sendForm').inert = false; };
+$('sendConfirm').addEventListener('click', (e) => { if (e.target === $('sendConfirm')) $('btnSendBack').click(); }); // backdrop
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('sendConfirm').classList.contains('hidden')) $('btnSendBack').click(); });
 $('btnSendGo').onclick = async () => {
   if (!sendPlan) return;
-  show('sendConfirm', false); show('sendDone', true);
+  show('sendConfirm', false); show('sendForm', false); $('sendForm').inert = false; show('sendDone', true);
   $('sdTitle').textContent = T('전송 중...'); $('sdBody').textContent = T('서명하고 보내는 중입니다. 팝업을 닫아도 전송은 계속됩니다.');
   const r = await send({ type: 'wallet:send', to: sendPlan.to, sol: sendPlan.sol, max: sendPlan.max });
   sendPlan = null;
@@ -459,6 +477,7 @@ $('btnLock').onclick = async () => { await send({ type: 'wallet:lock' }); tab = 
 function dialog({ title, body, yes = T('확인'), tone = 'primary', password = false, onYes = null }) {
   $('dlgTitle').textContent = title; $('dlgBody').innerHTML = body;
   $('dlgYes').textContent = yes; $('dlgYes').className = 'btn ' + (tone === 'danger' ? 'live' : 'primary');
+  $('dlg').classList.toggle('danger', tone === 'danger');
   $('dlgNo').textContent = T('취소'); show('dlgNo', true); show('dlgYes', true);
   show('dlgPwField', password); $('dlgPw').value = ''; say('dlgMsg', '');
   show('dlg', true); if (password) $('dlgPw').focus();
@@ -475,6 +494,8 @@ function dialog({ title, body, yes = T('확인'), tone = 'primary', password = f
 }
 let dlgClose = null;
 $('dlg').addEventListener('click', (e) => { if (e.target === $('dlg') && dlgClose) dlgClose(); });
+// tray close buttons take the backdrop's path (cancel)
+document.querySelectorAll('.modal .tx').forEach((b) => { b.onclick = () => b.closest('.modal').click(); });
 document.addEventListener('keydown', (e) => {
   if ($('dlg').classList.contains('hidden')) return;
   if (e.key === 'Escape' && dlgClose) dlgClose();
