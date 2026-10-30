@@ -102,18 +102,18 @@ const SITES = { axiom: { re: /(^|\.)axiom\.trade$/, name: 'Axiom', url: 'https:/
 async function renderSite() {
   let host = '';
   try { const [t] = await chrome.tabs.query({ active: true, currentWindow: true }); host = t && t.url ? new URL(t.url).hostname : ''; } catch (_) {}
-  const cur = Object.values(SITES).find((s) => s.re.test(host)) || null;
+  const [key, cur] = Object.entries(SITES).find(([, s]) => s.re.test(host)) || [null, null];
   const on = !!(cur && cur.ok);
   $('siteStatus').classList.toggle('on', on);
   if (cur) { $('siteIcon').src = chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(cur.url)}&size=32`); show('siteIcon', true); }
   else show('siteIcon', false);
-  const teSite = cur && cur.name === 'Axiom'; // sites where the terminal's own buttons are executed by Tradeasy
-  show('teSwitchWrap', !!teSite);
-  if (teSite) { const { teMode_axiom: m } = await chrome.storage.local.get('teMode_axiom'); $('teSwitch').checked = m !== false; }
+  const teKey = on ? 'teMode_' + key : null; // supported sites: the terminal's own buttons are executed by Tradeasy
+  show('teSwitchWrap', !!teKey);
+  if (teKey) { const { [teKey]: m } = await chrome.storage.local.get(teKey); $('teSwitch').checked = m !== false; $('teSwitch').dataset.key = teKey; }
   $('siteText').textContent = !cur ? T('지원 사이트가 아닙니다') : cur.ok ? T('{site}에서 동작 중', { site: cur.name }) : T('{site}는 아직 지원하지 않습니다', { site: cur.name });
 }
 
-$('teSwitch').addEventListener('change', () => chrome.storage.local.set({ teMode_axiom: $('teSwitch').checked }));
+$('teSwitch').addEventListener('change', () => chrome.storage.local.set({ [$('teSwitch').dataset.key]: $('teSwitch').checked }));
 
 // ---------- onboarding: back ----------
 // previous step; going back to the wallet step removes the wallet made or imported in this onboarding

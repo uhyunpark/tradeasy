@@ -19,6 +19,7 @@
   });
   const B58 = '[1-9A-HJ-NP-Za-km-z]{32,44}';
   const QUICK_RE = /^(Buy|Sell)\s+([\d.,]+)\s*(SOL|%)?$/i; // one-click buttons: "Buy 0.03 SOL", "Sell 50%" 
+  const BUY_RE = /^(Buy|매수|买入)$/i, SELL_RE = /^(Sell|매도|卖出)$/i; // GMGN shows its UI language (English, Korean, Chinese)
   const num = (v) => { const n = Number(String(v ?? '').replace(/,/g, '')); return Number.isFinite(n) && n > 0 ? n : null; };
   const json = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { return null; } };
 
@@ -54,7 +55,21 @@
     gmgn: {
       name: 'GMGN',
       mintRe: new RegExp(`/sol/token/(?:[A-Za-z0-9]+_)?(${B58})`),
-      mainSide(text, r) { const m = /^(Buy|Sell)$/.exec(text); return m && r.width >= 180 && r.height >= 28 ? m[1].toLowerCase() : null; },
+      // market button of the trade panel: "Buy", or "Buy 0.1 ($9.81)" once an amount is entered
+      mainSide(text, r) { const m = /^(\S+)(\s|$)/.exec(text); return m && r.width >= 180 && r.height >= 28 ? (BUY_RE.test(m[1]) ? 'buy' : SELL_RE.test(m[1]) ? 'sell' : null) : null; },
+      intercept: true, // Tradeasy mode: the terminal's own buttons are executed by Tradeasy
+      // the panel's tabs are buy / sell / auto (limit, TP/SL); the active one is styled apart from the other two
+      autoTab(btn) {
+        for (let el = btn.parentElement, i = 0; el && i < 8; el = el.parentElement, i++) {
+          for (const row of el.querySelectorAll('div')) {
+            const k = row.children;
+            if (k.length !== 3 || !BUY_RE.test(btnText(k[0])) || !SELL_RE.test(btnText(k[1]))) continue;
+            const c = [...k].map((x) => x.className);
+            return c[2] !== c[0] && c[2] !== c[1];
+          }
+        }
+        return false;
+      },
       readSettings() {
         const t = json('tradeConfigsV12');
         const sol = t && t.sol;
@@ -84,7 +99,7 @@
           if (sib && sib.querySelectorAll('span').length >= 3) row = sib;
         }
         if (!row) return {};
-        const vals = [...row.querySelectorAll('span')].map((x) => (x.innerText || '').trim()).filter(Boolean);
+        const vals = [...row.querySelectorAll('span')].map((x) => (x.innerText || '').trim()).filter((t) => t && !/^[\ue000-\uf8ff\u200b]+$/.test(t)); // icon spans hold a glyph
         const exact = (t) => (t && /^[0-9.]+%?$/.test(t) ? num(t.replace('%', '')) : null);
         return { slippage: exact(vals[0]), priorityFeeSol: exact(vals[1]), bribeFeeSol: exact(vals[2]) };
       },
@@ -116,7 +131,7 @@
     return st;
   };
   const btnText = (btn) => (btn.innerText || btn.textContent || '').trim().replace(/\s+/g, ' ');
-  const sideOf = (btn) => A.mainSide(btnText(btn), btn.getBoundingClientRect());
+  const sideOf = (btn) => { const s = A.mainSide(btnText(btn), btn.getBoundingClientRect()); return s && !(A.autoTab && A.autoTab(btn)) ? s : null; };
 
   // ---------- hook bridge (Axiom only: protocol hint, blockhash, trades) ----------
   const protocolByMint = new Map();
@@ -457,12 +472,41 @@
     }
     return null;
   }
+  // GMGN trade controls that are not plain buttons: amount chips (span), instant trade boxes and list quick buys (div)
+  function gmgnControl(target) {
+    const q = target.closest('[data-testid=quickbuy]');
+    if (q) { // list card: "0.01 SOL" buys that amount of the card's token
+      const m = /([\d.,]+)\s*SOL/i.exec(btnText(q));
+      const card = q.closest('[href]');
+      const mint = card && ((card.getAttribute('href') || '').match(A.mintRe) || [])[1];
+      return m && mint ? { kind: 'quick', el: q, side: 'buy', value: num(m[1]), mint } : { kind: 'block', el: q };
+    }
+    let box = target.closest('div,span,button');
+    while (box && !btnText(box) && box.parentElement) box = box.parentElement; // empty overlays (tooltip anchors) cover the chips
+    if (!box) return null;
+    const text = btnText(box), tall = box.getBoundingClientRect().height >= 24; // fee values next to them are 16px tall
+    const inst = box.closest('[data-testid^="instant_trade_"]');
+    if (inst) { // instant trade window: the boxes trade the page's token at once
+      if (!NUM_RE.test(text) || !tall) return null;
+      return { kind: 'quick', el: box, side: inst.getAttribute('data-testid') === 'instant_trade_sell' ? 'sell' : 'buy', value: num(text.replace('%', '')), pct: text.endsWith('%'), mint: urlMint() };
+    }
+    if (box.tagName === 'SPAN' && NUM_RE.test(text) && tall) { // amount chips of the trade panel
+      for (const b of tracked.keys()) {
+        const p = b.isConnected && panelOf(b);
+        if (p && p.el.contains(box)) return { kind: 'chip', el: box, btn: b, panel: p, value: num(text.replace('%', '')), pct: text.endsWith('%') };
+      }
+    }
+    return null;
+  }
   function classify(target) {
-    const el = target && target.closest ? target.closest('button,[role=button]') : null;
-    if (!el || (layer && layer.contains(el))) return null;
+    if (!target || !target.closest || (layer && layer.contains(target))) return null;
+    const c = SITE === 'gmgn' && gmgnControl(target);
+    if (c) return c;
+    const el = target.closest('button,[role=button]');
+    if (!el) return null;
     const text = btnText(el);
     const side = A.mainSide(text, el.getBoundingClientRect());
-    if (side) return { kind: 'main', el, side };
+    if (side) return A.autoTab && A.autoTab(el) ? { kind: 'block', el, auto: true } : { kind: 'main', el, side };
     if (NUM_RE.test(text)) { // amount chips of a trade panel
       for (const b of tracked.keys()) {
         const p = b.isConnected && panelOf(b);
@@ -472,6 +516,9 @@
     }
     const m = QUICK_RE.exec(text);
     if (m) return { kind: 'quick', el, side: m[1].toLowerCase(), value: num(m[2]), pct: m[3] === '%' };
+    if (SITE === 'gmgn' && text) { // other trade buttons of GMGN's instant trade window (e.g. sell initials)
+      for (let x = el.parentElement, i = 0; x && i < 4; x = x.parentElement, i++) if (x.querySelector('[data-testid^="instant_trade_"]')) return { kind: 'block', el };
+    }
     return null;
   }
   // set a React-controlled input the way typing does (native setter + input event)
@@ -517,6 +564,7 @@
   async function handle(c) {
     const fail = (m) => toast(card(T('Tradeasy 모드'), m), 'err', true, 8000);
     try {
+      if (c.kind === 'block') return fail(c.auto ? T('Tradeasy는 자동 주문을 지원하지 않아 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 주문합니다') : T('Tradeasy가 처리할 수 없는 버튼이라 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 거래합니다'));
       if (c.kind === 'chip') {
         fillInput(c.panel.input, c.value);
         pendingPct = c.pct || sideOf(c.btn) === 'sell' ? { v: c.value, at: Date.now() } : null;
@@ -537,7 +585,7 @@
       if (c.kind === 'quick') {
         // the page's own token only for one-click buttons inside this page's trade panel
         const inPanel = [...tracked.keys()].some((b) => { const p = b.isConnected && panelOf(b); return p && p.el.contains(c.el); });
-        const mint = (await rowToken(c.el)) || (inPanel ? urlMint() : null);
+        const mint = c.mint || (await rowToken(c.el)) || (inPanel ? urlMint() : null);
         if (!mint || !c.value) return fail(T('이 버튼의 토큰을 알 수 없어 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 거래됩니다'));
         if (c.side === 'buy') return doTrade({ side: 'buy', sol: c.value, mint }, null);
         return doTrade({ side: 'sell', percent: await sellPercent(mint, c.value, c.pct), mint }, null);

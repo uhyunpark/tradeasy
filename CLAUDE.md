@@ -4,7 +4,7 @@ Chrome MV3 extension for Solana trading terminals (Axiom, GMGN). The user keeps 
 
 ## Principles (do not break)
 
-- **Never send a fee-paying terminal trade silently.** On Axiom (Tradeasy mode) every trade press is either executed by Tradeasy or blocked with a toast, also in orphaned tabs. Only trusted events (`isTrusted`) act.
+- **Never send a fee-paying terminal trade silently.** On Axiom and GMGN (Tradeasy mode) every trade press is either executed by Tradeasy or blocked with a toast, also in orphaned tabs. Only trusted events (`isTrusted`) act.
 - **Don't break the terminal.** Our UI lives in `#te-layer` (overlay). Never block or modify the terminal's network traffic or workers (blocking Axiom's SharedWorker crashed the site). Interception is limited to user input events on trade controls.
 - **Terminal data first** (presets, pool hints, blockhash feed, token meta); RPC only for prefetch, simulate, confirm.
 - **Zero RPC at click time.** State is prefetched and served from the RPC cache (`market.js`, `cacheConnection`). e2e asserts this. The one exception is a Jupiter-routed coin (non-SOL pair): one HTTPS call to Jupiter `/build` at click time.
@@ -88,12 +88,13 @@ Not supported directly (and not routed): Raydium AMM v4 (incl. LaunchLab coins t
   - Presets: `localStorage.tradeConfigsV12` (`sol.buy/sell.tradeConfigs[tradeConfigIndex]`, `quickAmount`).
   - Token: XHR `mutil_window_token_info` (pool.exchange, pool.pool_address); `recommend_slippage/sol/<mint>`.
   - "auto" values are read from the screen under the main button.
+  - DOM (text follows GMGN's UI language: Buy/매수/买入): the market button is a `button` "Buy" ("Buy 0.1 ($9.81)" once an amount is entered) under buy / sell / auto tabs (auto = limit, TP/SL: blocked); chips are `span`s; instant trade boxes sit in `[data-testid=instant_trade_buy|sell]`; list quick buys are `[data-testid=quickbuy]` inside a card whose `href` holds the mint.
   - No blockhash feed, so the RPC is prefetched every 15 s.
 - Preset fields that stay "auto" fall back to `config.js` defaults (slippage 20%, priority 0.0003, tip 0.001).
 
 ## Storage
 
-- `chrome.storage.local`: config keys (`config.js` `DEFAULTS`), `vault`, `onboard`, `trades`, `positions`, `teMode_axiom` (was `dxMode_axiom` before v0.22; migrated on start).
+- `chrome.storage.local`: config keys (`config.js` `DEFAULTS`), `vault`, `onboard`, `trades`, `positions`, `teMode_axiom`, `teMode_gmgn` (`dxMode_axiom` before v0.22; migrated on start).
 - `chrome.storage.session`: `sk` (unlocked key while the lock is on).
 
 ## UI language

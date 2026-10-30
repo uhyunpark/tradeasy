@@ -154,6 +154,8 @@
     "금액을 입력하세요": "Enter an amount",
     "{site} 매수 금액이 {unit} 단위입니다. 금액 옆 단위를 SOL로 바꿔주세요": "The {site} buy amount is in {unit}. Switch the unit next to the amount to SOL",
     "이 버튼의 토큰을 알 수 없어 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 거래됩니다": "Blocked: could not tell which token this button trades. Turn Tradeasy mode off to trade on the terminal itself",
+    "Tradeasy는 자동 주문을 지원하지 않아 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 주문합니다": "Blocked: Tradeasy does not support auto orders. Turn Tradeasy mode off to place the order on the terminal itself",
+    "Tradeasy가 처리할 수 없는 버튼이라 막았습니다. Tradeasy 모드를 끄면 터미널에서 직접 거래합니다": "Blocked: Tradeasy cannot handle this button. Turn Tradeasy mode off to trade on the terminal itself",
     "Tradeasy가 업데이트되었습니다. 이 탭을 새로고침하세요. 방금 누른 주문은 전송되지 않았습니다.": "Tradeasy was updated. Reload this tab. The order you just pressed was not sent.",
     "Tradeasy로 거래": "Trade with Tradeasy",
     "Tradeasy 모드: 이 버튼은 Tradeasy가 체결합니다 (누르면 끄기)": "Tradeasy mode: this button is executed by Tradeasy (click to turn off)",

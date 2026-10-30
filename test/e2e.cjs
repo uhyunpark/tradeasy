@@ -48,13 +48,26 @@ sw.port.onmessage = (e) => { window.__axiomFrames = (window.__axiomFrames||0) + 
 sw.port.postMessage({kind:'hello'});
 </script></body></html>`;
 
-const gmgn_html = `<!doctype html><html><body style="background:#111;color:#eee;font-family:sans-serif">
-<div style="width:360px;padding:40px 12px 12px"><div>Amount <input id="amt" value="0.03"> SOL</div>
-<button style="width:100px">Buy</button>
-<button id="main" style="width:291px;height:36px" onclick="window.__gmgnClicks=(window.__gmgnClicks||0)+1">${SIDE}</button></div>
-<div><span>Auto</span> <span>0.00014</span> <span>&lt;0.01</span> <span>Red.</span></div>
+const gmgn_html = `<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#111;color:#eee;font-family:sans-serif">
+<!-- mirrors gmgn.ai (Korean UI): tabs, span chips, wrapped market button, fee row with icon glyphs, instant trade window, list quick buys -->
+<div id="panel" style="width:291px;padding:40px 12px 12px">
+<div class="tabs" style="display:flex">${['매수', '매도', '자동'].map((t, i) => `<div class="${(SIDE === 'Sell' ? i === 1 : i === 0) ? 't on' : 't'}" style="flex:1">${t}</div>`).join('')}</div>
+<div><div class="field"><span>수량</span><input id="amt" value=""><span>${SIDE === 'Sell' ? 'TOKEN' : 'SOL'}</span></div>
+<div style="display:flex;gap:2px">${(SIDE === 'Sell' ? ['10%', '25%', '50%', '100%'] : ['0.01', '0.1', '0.5', '1']).map((v) => `<span class="chip" style="position:relative;display:inline-flex;align-items:center;width:64px;height:28px">${v}<span style="position:absolute;inset:0"></span></span>`).join('')}</div>
+<div>1 SOL ≈ 33.6M TOKEN</div>
+<div><button id="main" style="width:291px;height:36px">${SIDE === 'Sell' ? '매도' : '매수'}</button></div>
+<div><span></span><span>자동</span><span></span><span>0.00014</span><span></span><span>&lt;0.01</span><span></span><span>중간보호</span></div></div></div>
+<div id="inst" style="width:292px;margin:20px 12px">
+<div data-testid="instant_trade_buy" style="display:flex;gap:8px">${['0.01', '0.1'].map((v) => `<div class="box" style="width:67px;height:28px">${v}</div>`).join('')}</div>
+<div><span>0.00042</span></div>
+<div data-testid="instant_trade_sell" style="display:flex;gap:8px">${['25%', '50%'].map((v) => `<div class="box" style="width:67px;height:28px">${v}</div>`).join('')}</div>
+<div><div><button id="initials">원금회수</button></div></div></div>
+<div class="card" href="/sol/token/${MINT}" style="margin:20px 12px"><div class="acts"><div data-testid="quickbuy" id="qb2">매수</div><div data-testid="quickbuy" id="qb">0.01 SOL</div></div></div>
 <script>
 const cfg = {autoApprove:true,openMEV:true,slippageCustom:'',slippageType:'auto',rpc:'',priorityType:'auto',priorityCustom:'0.005',autoGasMax:'0.1',tipType:'auto',tipCustom:'0.005',mevMode:'normal'};
+window.__gmgnTrades = 0;
+document.body.addEventListener('pointerdown', (e) => { if (e.target.closest('#main, .box, [data-testid=quickbuy], #initials')) window.__gmgnTrades++; });
+document.body.addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (c) { window.__gmgnChip = (window.__gmgnChip || 0) + 1; document.getElementById('amt').value = c.textContent.replace('%', ''); } });
 const x1 = new XMLHttpRequest(); x1.open('GET', '/api/v1/recommend_slippage/sol/${MINT}?device_id=x'); x1.send();
 const x2 = new XMLHttpRequest(); x2.open('POST', '/api/v1/mutil_window_token_info?device_id=x'); x2.setRequestHeader('content-type','application/json'); x2.send(JSON.stringify({chain:'sol',addresses:['${MINT}']}));
 localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0.01,0.1,0.5,1,0.25,2,5,10],tradeConfigs:[cfg,cfg,cfg],tradeConfigIndex:0},
@@ -216,25 +229,57 @@ localStorage.setItem('tradeConfigsV12', JSON.stringify({sol:{buy:{quickAmount:[0
   const lastToast = () => page.evaluate(() => { const t = document.querySelector('.te-toast.ok .bd, .te-toast.err .bd'); return t ? t.innerText.replace(/\s+/g, ' ') : null; });
   const waitToast = async (prev) => { for (let i = 0; i < 60; i++) { const t = await lastToast(); if (t && t !== prev) return t; await page.waitForTimeout(250); } return null; };
   if (process.env.SITE === 'gmgn') {
-    // GMGN: Tradeasy badge -> popover -> amount
-    await page.click('#te-layer .te-badge');
-    await page.waitForSelector('.te-pop button[data-sol], .te-pop button[data-pct]', { timeout: 8000 });
-    await page.waitForTimeout(1500); // let state load
-    await page.keyboard.press('Escape');
-    await page.click('#te-layer .te-badge'); // reopen with state
-    await page.waitForTimeout(1400);
-    popText = await page.textContent('.te-pop');
-    await page.screenshot({ path: path.join(OUT, 'e2e-popover.png') });
-    const target = SIDE === 'Buy' ? '.te-pop button[data-sol="0.01"]' : '.te-pop button[data-pct="50"]';
+    // GMGN: Tradeasy mode on by default -> the page's own chips, market button, instant trade boxes and list quick buys
+    const clearToasts = () => page.evaluate(() => document.querySelectorAll('.te-toast').forEach((t) => t.remove()));
+    const trades = () => page.evaluate(() => window.__gmgnTrades);
+    await page.waitForTimeout(1500);
+    teMode = { badge: await page.getAttribute('#te-layer .te-badge', 'aria-checked'), cover: await page.isVisible('#te-layer .te-cover') };
+    { const b = await page.locator('#main').boundingBox(); await page.screenshot({ path: path.join(OUT, `gmgn-cover-${process.env.LIVE ? 'live' : 'sim'}.png`), clip: { x: b.x - 30, y: b.y - 60, width: b.width + 60, height: b.height + 90 } }); }
+    await page.click(SIDE === 'Buy' ? '.chip >> text="0.01"' : '.chip >> text="50%"');
+    teMode.inputAfterChip = await page.inputValue('#amt');
+    teMode.chipReachedPage = await page.evaluate(() => window.__gmgnChip || 0);
     const rpcBefore = JSON.stringify(rpcCalls);
-    await page.click(target);
+    await pressAt('#main');
     toastText = await waitToast(null);
     rpcAtClick = { before: JSON.parse(rpcBefore), after: JSON.parse(JSON.stringify(rpcCalls)) };
-    axiomClicks = await page.evaluate(() => window.__gmgnClicks || 0);
     if (process.env.LIVE) { await page.waitForTimeout(4000); confirmToast = await page.evaluate(() => [...document.querySelectorAll('.te-toast')].map((x) => x.innerText).join(' || ')); }
-    await page.evaluate(() => document.querySelector('#te-layer .te-badge').click()); // synthetic: must not open
-    await page.waitForTimeout(500);
-    popAfterSynthetic = !!(await page.$('.te-pop'));
+    // instant trade window: the box trades the page token at once
+    await clearToasts(); await page.click('[data-testid=instant_trade_buy] .box >> text="0.01"');
+    teMode.instantToast = await waitToast(null);
+    // list quick buy "0.01 SOL": the card's token
+    await clearToasts(); await page.click('#qb');
+    teMode.quickToast = await waitToast(null);
+    // quick buy without an amount and other instant window buttons: blocked
+    await clearToasts(); await page.click('#qb2');
+    teMode.unknownQuickToast = await waitToast(null);
+    await clearToasts(); await page.click('#initials');
+    teMode.initialsToast = await waitToast(null);
+    // fee value next to the boxes is not an amount box
+    await clearToasts(); await page.click('#inst span >> text="0.00042"'); await page.waitForTimeout(500);
+    teMode.feeClickToast = await lastToast();
+    // auto tab (limit, TP/SL): no cover, the market button is blocked
+    await page.evaluate(() => document.querySelectorAll('.tabs > div').forEach((t, i) => { t.className = i === 2 ? 't on' : 't'; }));
+    await page.waitForTimeout(700);
+    teMode.autoTabCover = await page.isVisible('#te-layer .te-cover');
+    await clearToasts(); await pressAt('#main');
+    teMode.autoTabToast = await waitToast(null);
+    await page.evaluate((sell) => document.querySelectorAll('.tabs > div').forEach((t, i) => { t.className = i === (sell ? 1 : 0) ? 't on' : 't'; }), SIDE === 'Sell');
+    await page.waitForTimeout(700);
+    teMode.tradesReachedPageWhileOn = await trades();
+    // badge toggles Tradeasy mode off: now the page itself trades
+    await page.click('#te-layer .te-badge');
+    await page.waitForTimeout(300);
+    teMode.badgeOff = await page.getAttribute('#te-layer .te-badge', 'aria-checked');
+    await page.click('#main');
+    teMode.tradesReachedPageWhenOff = await trades();
+    await page.click('#te-layer .te-badge'); // back on
+    await pop.evaluate(() => chrome.storage.local.set({ teMode_gmgn: false }));
+    await page.waitForTimeout(300);
+    teMode.popupOff = { badge: await page.getAttribute('#te-layer .te-badge', 'aria-checked'), cover: await page.isVisible('#te-layer .te-cover') };
+    await pop.evaluate(() => chrome.storage.local.set({ teMode_gmgn: true }));
+    await page.waitForTimeout(300);
+    teMode.popupOn = { badge: await page.getAttribute('#te-layer .te-badge', 'aria-checked'), cover: await page.isVisible('#te-layer .te-cover') };
+    axiomClicks = teMode.tradesReachedPageWhileOn;
   } else {
     // Axiom: Tradeasy mode on by default -> the page's own chip and market button
     await page.waitForTimeout(1500);
