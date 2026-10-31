@@ -79,6 +79,7 @@ function view() {
   show('siteStatus', !inSettings && !setup);
   show('liveConfirm', liveAsk && !inSettings && !setup);
   document.querySelectorAll('#modeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === C.mode));
+  $('teSwitchWrap').classList.toggle('live', C.mode === 'live');
   if (setup) renderStepper();
   return v;
 }
@@ -287,7 +288,7 @@ async function renderHome() {
     $('btnReloadTab').onclick = () => { chrome.tabs.reload(activeTab.id); $('tokBody').textContent = T('새로고침 중...'); };
   } else if (!w) {
     tokState('');
-    $('tokBody').textContent = T('지금 탭에서 Axiom / GMGN 토큰 페이지를 열면 여기에 표시됩니다.');
+    $('tokBody').textContent = T('토큰 상세 거래 페이지를 열면 여기에 표시됩니다.');
   } else {
     const s = hasKey ? w.state : null, m = w.meta || {};
     const unsupported = w.error && !s && /unsupported venue|only SOL-/.test(w.error);

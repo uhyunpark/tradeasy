@@ -200,11 +200,13 @@
     letter-spacing:.4px;color:var(--te-on-accent);background:var(--te-accent);border-radius:var(--te-r-xs);cursor:pointer;user-select:none;box-shadow:0 0 0 2px var(--te-bg)}
   .te-badge.sim{background:var(--te-sim-fill);color:var(--te-on-fill)}
   .te-badge.off{background:var(--te-surface-2);color:var(--te-muted)}
-  .te-badge.tg{gap:5px;padding:2px 4px 2px 7px;border-radius:999px;font-size:10px;box-shadow:none}
+  .te-badge.tg{gap:5px;padding:2px 4px;border-radius:999px;font-size:10px;box-shadow:none}
+  .te-badge.tg>svg{width:12px;height:12px;flex:0 0 12px}
   .te-badge.tg .sw{position:relative;width:20px;height:12px;border-radius:999px;background:rgba(0,0,0,.22);flex:0 0 20px;transition:background .15s}
   .te-badge.tg .sw::after{content:'';position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:currentColor;transition:transform .15s}
   .te-badge.tg:not(.off) .sw::after{transform:translateX(8px)}
   .te-badge.tg.off .sw{background:var(--te-surface-3)}.te-badge.tg.off .sw::after{background:var(--te-muted)}
+  .te-badge.tg:not(.off):not(.sim) .sw{background:var(--te-buy)}.te-badge.tg:not(.off):not(.sim) .sw::after{background:var(--te-on-fill)}
   .te-badge.tg:hover{filter:brightness(1.1)}
   .te-badge.tg .md{display:inline-grid;padding:0 4px;border-radius:999px;background:rgba(0,0,0,.22);font-size:8px;line-height:12px;letter-spacing:.5px}
   .te-badge.tg .md>span{grid-area:1/1;text-align:center}.te-badge.tg.sim .md>:last-child,.te-badge.tg:not(.sim) .md>:first-child{visibility:hidden}
@@ -212,16 +214,21 @@
   .te-cover.sim *{color:var(--te-on-fill) !important}
   .te-cover{position:fixed;z-index:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;box-sizing:border-box;
     cursor:pointer;user-select:none;color:var(--te-on-accent);white-space:nowrap;overflow:hidden;
-    background:linear-gradient(100deg,var(--te-accent-deep) 0%,var(--te-accent) 45%,var(--te-accent-hover) 100%);
-    box-shadow:inset 0 0 0 1px var(--te-line-strong),0 0 12px var(--te-accent-glow);
+    background:linear-gradient(100deg,color-mix(in srgb,var(--te-accent-deep) 80%,var(--te-sim)) 0%,var(--te-accent) 40%,var(--te-accent-hover) 75%,color-mix(in srgb,var(--te-accent-hover) 50%,var(--te-on-fill)) 100%);
+    box-shadow:inset 0 1px 0 color-mix(in srgb,var(--te-on-fill) 60%,transparent),inset 0 0 0 1px var(--te-line-strong),0 0 16px color-mix(in srgb,var(--te-accent) 50%,transparent),0 0 40px color-mix(in srgb,var(--te-sim) 28%,transparent);
     animation:teglow 2.4s ease-in-out infinite;transition:filter .12s,transform .06s}
+  .te-cover::after{content:'';position:absolute;z-index:-1;top:0;bottom:0;left:0;width:40%;pointer-events:none;
+    background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--te-on-fill) 80%,transparent) 50%,transparent);
+    transform:translateX(-130%) skewX(-20deg);animation:tesheen 3.2s ease-in-out infinite}
   .te-cover.sim{color:var(--te-on-fill);text-shadow:0 1px 2px rgba(0,0,0,.35);
     background:linear-gradient(100deg,var(--te-sim-fill) 0%,color-mix(in srgb,var(--te-sim-fill) 80%,var(--te-sim)) 100%);
-    box-shadow:inset 0 0 0 1px var(--te-line-strong),0 0 12px color-mix(in srgb,var(--te-sim) 55%,transparent);animation-name:teglowsim}
+    box-shadow:inset 0 1px 0 color-mix(in srgb,var(--te-on-fill) 30%,transparent),inset 0 0 0 1px var(--te-line-strong),0 0 16px color-mix(in srgb,var(--te-sim) 65%,transparent),0 0 40px color-mix(in srgb,var(--te-sim) 28%,transparent);animation-name:teglowsim}
+  .te-cover.sim::after{background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--te-on-fill) 40%,transparent) 50%,transparent)}
   .te-cover:hover{filter:brightness(1.08)}.te-cover:active{transform:scale(.985)}
-  .te-cover.busy{opacity:.7;cursor:progress;animation:none}
-  @keyframes teglow{50%{box-shadow:inset 0 0 0 1px var(--te-line-strong),0 0 20px var(--te-accent-glow),0 0 34px var(--te-accent-soft)}}
-  @keyframes teglowsim{50%{box-shadow:inset 0 0 0 1px var(--te-line-strong),0 0 20px color-mix(in srgb,var(--te-sim) 80%,transparent),0 0 34px var(--te-sim-soft)}}
+  .te-cover.busy{opacity:.7;cursor:progress;animation:none}.te-cover.busy::after{animation:none;opacity:0}
+  @keyframes teglow{50%{box-shadow:inset 0 1px 0 color-mix(in srgb,var(--te-on-fill) 60%,transparent),inset 0 0 0 1px var(--te-line-strong),0 0 26px color-mix(in srgb,var(--te-accent) 65%,transparent),0 0 60px color-mix(in srgb,var(--te-sim) 40%,transparent)}}
+  @keyframes teglowsim{50%{box-shadow:inset 0 1px 0 color-mix(in srgb,var(--te-on-fill) 30%,transparent),inset 0 0 0 1px var(--te-line-strong),0 0 26px color-mix(in srgb,var(--te-sim) 90%,transparent),0 0 60px color-mix(in srgb,var(--te-sim) 40%,transparent)}}
+  @keyframes tesheen{0%,55%{transform:translateX(-130%) skewX(-20deg)}100%{transform:translateX(330%) skewX(-20deg)}}
   .te-pop{position:fixed;pointer-events:auto;width:284px;box-sizing:border-box;background:var(--te-surface);color:var(--te-fg);border-radius:var(--te-r-lg);
     padding:12px;box-shadow:inset 0 0 0 1px var(--te-line),var(--te-shadow-pop)}
   .te-pop h4{margin:0 0 8px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
@@ -244,7 +251,7 @@
   .te-pop button:active:not(:disabled){transform:scale(.97)}
   .te-pop button:disabled{opacity:.4;cursor:default}
   .te-tag{display:inline-block;padding:0 5px;border-radius:var(--te-r-xs);font-size:10px;font-weight:700;margin-left:4px}
-  .te-tag.sim{background:var(--te-sim-soft);color:var(--te-sim)}.te-tag.live{background:var(--te-live-soft);color:var(--te-sell)}
+  .te-tag.sim{background:var(--te-sim-soft);color:var(--te-sim)}.te-tag.live{background:var(--te-buy-soft);color:var(--te-buy)}
   .te-toasts{position:fixed;z-index:3;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;width:330px}
   .te-toast{display:flex;gap:10px;align-items:flex-start;background:var(--te-surface);color:var(--te-fg);border-radius:var(--te-r-lg);padding:12px 12px 12px 14px;
     box-shadow:inset 0 0 0 1px var(--te-line),var(--te-shadow-pop);font:13px/1.45 var(--te-font);max-height:50vh;overflow:auto;animation:tein .26s var(--te-spring)}
@@ -266,7 +273,7 @@
   .te-toast details pre{margin:4px 0 0;font:10px/1.4 var(--te-mono);white-space:pre-wrap;word-break:break-all}
   .te-toast .x{flex:0 0 20px;height:20px;border:0;background:transparent;color:var(--te-muted);cursor:pointer;padding:0;display:grid;place-items:center;border-radius:50%}
   .te-toast .x:hover{background:var(--te-surface-2);color:var(--te-fg)}.te-toast .x svg{width:12px;height:12px}
-  @media (prefers-reduced-motion:reduce){.te-toast{animation:none}.te-cover{animation:none}}`;
+  @media (prefers-reduced-motion:reduce){.te-toast{animation:none}.te-cover,.te-cover::after{animation:none}}`;
   let layer = null, toasts = null;
   function getLayer() {
     if (layer && layer.isConnected) return layer;
@@ -650,7 +657,7 @@
   let modeCache = 'sim';
   function makeBadge(btn) {
     const b = document.createElement('span'); b.className = 'te-badge';
-    if (INTERCEPT) { b.classList.add('tg'); b.innerHTML = '<span>Tradeasy</span><span class="md"><span>SIM</span><span>LIVE</span></span><span class="sw"></span>'; } // a small switch: Tradeasy mode on/off, with SIM/LIVE
+    if (INTERCEPT) { b.classList.add('tg'); b.innerHTML = '<svg viewBox="1.5 1.5 29 29" role="img" aria-label="Tradeasy"><path fill="currentColor" fill-rule="evenodd" d="M1.5 16a14.5 14.5 0 1 0 29 0a14.5 14.5 0 1 0-29 0ZM3.5 16a12.5 12.5 0 1 0 25 0a12.5 12.5 0 1 0-25 0ZM5.5 16a10.5 10.5 0 1 0 21 0a10.5 10.5 0 1 0-21 0ZM7.5 16a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0-17 0ZM9.5 16a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0-13 0Z"/></svg><span class="md"><span>SIM</span><span>LIVE</span></span><span class="sw"></span>'; } // a small switch: Tradeasy mode on/off, with SIM/LIVE
     else { b.textContent = 'Tradeasy'; b.title = T('Tradeasy로 거래'); }
     const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
     ['pointerdown', 'mousedown', 'mouseup'].forEach((t) => b.addEventListener(t, stop, true));
@@ -664,15 +671,30 @@
     }, true);
     return b;
   }
+  // left edge of an icon-sized terminal control in the band x0..x1, top..top+h (e.g. GMGN's display settings icon), or null
+  function controlUnder(x0, x1, top, h) {
+    let left = null;
+    for (const y of [top + 2, top + h / 2, top + h - 2]) for (let x = x0 + 2; x < x1; x += 10) {
+      const e = document.elementsFromPoint(x, y).find((n) => !getLayer().contains(n));
+      const c = e && (e.closest('button,a,input,select,[role=button]') || (getComputedStyle(e).cursor === 'pointer' && e));
+      if (!c) continue;
+      const b = c.getBoundingClientRect();
+      if (b.width <= x1 - x0 && b.height <= h * 2 && (left === null || b.left < left)) left = b.left;
+    }
+    return left;
+  }
   function place() {
     for (const [btn, badge] of tracked) {
       if (!btn.isConnected || !sideOf(btn)) { badge.remove(); tracked.delete(btn); continue; }
       const r = btn.getBoundingClientRect();
       const visible = r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
       badge.style.display = visible ? 'inline-flex' : 'none';
-      if (INTERCEPT) { // switch sits just above the button's right end, not on it
-        badge.style.left = Math.round(r.right - (badge.offsetWidth || 44)) + 'px';
-        badge.style.top = Math.round(r.top - (badge.offsetHeight || 16) - 4) + 'px';
+      if (INTERCEPT) { // switch sits just above the button's right end, not on it, and left of a terminal icon there
+        const w = badge.offsetWidth || 44, h = badge.offsetHeight || 16, top = Math.round(r.top - h - 4);
+        let right = r.right;
+        for (let i = 0, ob; i < 3 && visible && (ob = controlUnder(right - w, right, top, h)) !== null; i++) right = Math.max(r.left + w, ob - 4);
+        badge.style.left = Math.round(right - w) + 'px';
+        badge.style.top = top + 'px';
       } else {
         badge.style.left = Math.round(r.right - 16) + 'px';
         badge.style.top = Math.round(r.top - 9) + 'px';

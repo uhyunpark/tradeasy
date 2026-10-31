@@ -32,7 +32,7 @@
     "연결 안 됨": "Not connected",
     "<div class=\"small mut\" style=\"margin-bottom:8px\">이 탭은 Tradeasy가 설치(업데이트)되기 전에 열려서 아직 연결되지 않았습니다.</div><button class=\"btn sm\" id=\"btnReloadTab\">탭 새로고침</button>": "<div class=\"small mut\" style=\"margin-bottom:8px\">This tab was opened before Tradeasy was installed or updated, so it is not connected yet.</div><button class=\"btn sm\" id=\"btnReloadTab\">Reload tab</button>",
     "새로고침 중...": "Reloading...",
-    "지금 탭에서 Axiom / GMGN 토큰 페이지를 열면 여기에 표시됩니다.": "Open an Axiom or GMGN token page in this tab to see it here.",
+    "토큰 상세 거래 페이지를 열면 여기에 표시됩니다.": "Open a token trading page to see it here.",
     "Helius 연결 필요": "Helius needed",
     "미지원": "Unsupported",
     "오류": "Error",

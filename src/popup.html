@@ -29,14 +29,15 @@
   .htitle { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; }
   .htitle > .icon:first-child { margin-left:-6px; }
   #hSettings { gap:4px; }
-  .logo { width:22px; height:22px; border-radius:6px; background:var(--te-accent); display:grid; place-items:center; font-size:11px; font-weight:800; color:var(--te-on-accent); }
+  .logo { flex:0 0 auto; width:22px; height:22px; color:var(--te-accent); }
+  .wordmark { flex:0 0 auto; width:65.65px; height:11.23px; overflow:visible; color:var(--te-fg); } /* Josefin Sans SemiBold outlines, cap height = 16px type */
   .hright { display:flex; align-items:center; gap:6px; }
   .seg { display:flex; gap:2px; padding:3px; border-radius:999px; background:var(--te-surface); box-shadow:inset 0 0 0 1px var(--te-line); }
   .seg button { border:0; background:none; height:24px; padding:0 10px; border-radius:999px; font-size:11px; font-weight:700; color:var(--te-muted); transition:background .15s, color .15s, transform .1s var(--te-ease); }
   .seg button:hover { color:var(--te-fg); }
   .seg button:active { transform:scale(.95); }
   .seg button.on.sim { background:var(--te-sim-fill); color:var(--te-on-fill); }
-  .seg button.on.live { background:var(--te-live); color:var(--te-on-fill); }
+  .seg button.on.live { background:var(--te-buy); color:var(--te-on-accent); }
   .seg button.on.lang { background:var(--te-surface-2); color:var(--te-fg); }
   .icon { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; border:0; background:transparent; border-radius:50%; color:var(--te-muted); padding:0; transition:background .15s, color .15s, transform .1s var(--te-ease); }
   .icon:hover { background:var(--te-surface-2); color:var(--te-fg); }
@@ -179,7 +180,7 @@
   .log .sx svg { width:12px; height:12px; }
   .log .more { align-self:center; margin-top:8px; }
   .tag { display:inline-flex; align-items:center; height:18px; padding:0 6px; border-radius:var(--te-r-xs); font-size:11px; font-weight:700; white-space:nowrap; flex:0 0 auto; }
-  .tag.sim { background:var(--te-sim-soft); color:var(--te-sim); } .tag.live { background:var(--te-live-soft); color:var(--te-sell); }
+  .tag.sim { background:var(--te-sim-soft); color:var(--te-sim); } .tag.live { background:var(--te-buy-soft); color:var(--te-buy); }
   .tag.buy { background:var(--te-buy-soft); color:var(--te-buy); } .tag.sell { background:var(--te-sell-soft); color:var(--te-sell); } .tag.wd { background:var(--te-surface-2); color:var(--te-muted); }
 
   /* forms + settings */
@@ -215,6 +216,8 @@
   .switch span::after { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; border-radius:50%; background:var(--te-muted); transition:transform .15s var(--te-ease), background .15s; }
   .switch input:checked + span { background:var(--te-accent); }
   .switch input:checked + span::after { transform:translateX(16px); background:var(--te-on-accent); }
+  .tesw.live .switch input:checked + span { background:var(--te-buy); }
+  .tesw.live .switch input:checked + span::after { background:var(--te-on-fill); }
   .switch input:focus-visible + span { outline:2px solid var(--te-accent); outline-offset:2px; }
   .switch.sm { width:28px; height:16px; flex:0 0 28px; }
   .switch.sm span::after { width:12px; height:12px; }
@@ -252,7 +255,7 @@
 </head>
 <body>
 <header>
-  <div class="htitle" id="hHome"><button class="icon hidden" id="btnObBack" title="뒤로" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="logo">T</div>Tradeasy</div>
+  <div class="htitle" id="hHome"><button class="icon hidden" id="btnObBack" title="뒤로" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><svg class="logo" viewBox="1.5 1.5 29 29" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M1.5 16a14.5 14.5 0 1 0 29 0a14.5 14.5 0 1 0-29 0ZM2.5 16a13.5 13.5 0 1 0 27 0a13.5 13.5 0 1 0-27 0ZM4 16a12 12 0 1 0 24 0a12 12 0 1 0-24 0ZM6 16a10 10 0 1 0 20 0a10 10 0 1 0-20 0ZM7.5 16a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0-17 0Z"/></svg><svg class="wordmark" viewBox="48 -702 4103 702" role="img" aria-label="Tradeasy"><path fill="currentColor" d="M48-616L48-728L535-728L535-616L347-616L347 0L231 0L231-616L48-616ZM600-423L701-423L711-303L707-320Q724-358 756-385Q787-412 821-427Q854-442 875-442L875-442L870-330Q822-334 787-313Q751-292 731-257Q711-221 711-182L711-182L711 0L600 0L600-423ZM1155 11L1155 11Q1096 11 1048-14Q999-39 971-89Q943-138 943-211L943-211Q943-283 973-335Q1002-386 1051-414Q1099-442 1156-442L1156-442Q1217-442 1255-418Q1292-393 1313-361L1313-361L1307-345L1318-423L1421-423L1421 0L1309 0L1309-103L1320-76Q1317-70 1305-57Q1292-43 1271-27Q1250-11 1222 0Q1193 11 1155 11ZM1186-81L1186-81Q1217-81 1242-92Q1267-103 1284-123Q1301-143 1309-171L1309-171L1309-263Q1301-289 1283-309Q1265-328 1240-339Q1214-350 1183-350L1183-350Q1148-350 1120-333Q1091-316 1074-286Q1056-256 1056-217L1056-217Q1056-179 1074-148Q1092-117 1122-99Q1152-81 1186-81ZM1748 11L1748 11Q1689 11 1642-17Q1594-45 1567-97Q1540-149 1540-218L1540-218Q1540-289 1569-339Q1598-389 1649-416Q1699-442 1762-442L1762-442Q1808-442 1850-425Q1892-407 1917-374L1917-374L1915-336L1915-780L2026-780L2026 0L1914 0L1914-96L1925-68Q1893-34 1849-12Q1805 11 1748 11ZM1783-84L1783-84Q1817-84 1843-95Q1868-106 1887-127Q1905-147 1914-175L1914-175L1914-265Q1906-291 1888-311Q1869-331 1842-343Q1815-354 1783-354L1783-354Q1748-354 1719-337Q1689-319 1671-289Q1653-259 1653-220L1653-220Q1653-182 1671-151Q1689-120 1719-102Q1749-84 1783-84ZM2382 11L2382 11Q2307 11 2254-18Q2201-47 2173-98Q2145-149 2145-215L2145-215Q2145-278 2177-330Q2209-381 2264-412Q2318-442 2384-442L2384-442Q2471-442 2528-392Q2584-341 2603-249L2603-249L2262-134L2236-197L2503-292L2479-279Q2469-309 2444-332Q2419-354 2375-354L2375-354Q2340-354 2313-337Q2286-320 2271-291Q2255-261 2255-221L2255-221Q2255-179 2272-149Q2289-118 2318-102Q2347-85 2384-85L2384-85Q2410-85 2434-94Q2457-103 2479-118L2479-118L2530-35Q2497-14 2458-2Q2418 11 2382 11ZM2890 11L2890 11Q2831 11 2783-14Q2734-39 2706-89Q2678-138 2678-211L2678-211Q2678-283 2708-335Q2737-386 2786-414Q2834-442 2891-442L2891-442Q2952-442 2990-418Q3027-393 3048-361L3048-361L3042-345L3053-423L3156-423L3156 0L3044 0L3044-103L3055-76Q3052-70 3040-57Q3027-43 3006-27Q2985-11 2957 0Q2928 11 2890 11ZM2921-81L2921-81Q2952-81 2977-92Q3002-103 3019-123Q3036-143 3044-171L3044-171L3044-263Q3036-289 3018-309Q3000-328 2975-339Q2949-350 2918-350L2918-350Q2883-350 2855-333Q2826-316 2809-286Q2791-256 2791-217L2791-217Q2791-179 2809-148Q2827-117 2857-99Q2887-81 2921-81ZM3437 9L3437 9Q3389 9 3346-8Q3302-25 3273-58L3273-58L3320-121Q3348-94 3376-82Q3403-69 3428-69L3428-69Q3447-69 3463-74Q3478-78 3488-88Q3497-98 3497-115L3497-115Q3497-135 3483-147Q3469-158 3447-166Q3425-173 3400-180L3400-180Q3346-198 3319-231Q3292-263 3292-306L3292-306Q3292-339 3309-370Q3326-400 3361-420Q3396-440 3449-440L3449-440Q3497-440 3533-429Q3568-418 3599-394L3599-394L3556-326Q3538-344 3514-354Q3489-363 3469-364L3469-364Q3451-365 3437-360Q3423-354 3414-344Q3405-334 3405-321L3405-321Q3405-301 3420-289Q3434-277 3457-270Q3480-263 3503-255L3503-255Q3534-246 3558-230Q3581-214 3595-192Q3609-169 3609-136L3609-136Q3609-98 3590-65Q3571-31 3533-11Q3495 9 3437 9ZM3878 203L3768 203L4049-423L4151-423L3878 203ZM3963-54L3877 3L3671-423L3797-423L3963-54Z"/></svg></div>
   <div class="htitle hidden" id="hSettings">
     <button class="icon" id="btnBack" title="뒤로" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><span id="hTitle">설정</span>
   </div>
@@ -376,7 +379,7 @@
 
   <div class="card">
     <h3>현재 토큰 <span class="pill hidden" id="tokState"></span></h3>
-    <div id="tokBody" class="mut small">지금 탭에서 Axiom / GMGN 토큰 페이지를 열면 여기에 표시됩니다.</div>
+    <div id="tokBody" class="mut small">토큰 상세 거래 페이지를 열면 여기에 표시됩니다.</div>
   </div>
 
   <div class="card">

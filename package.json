@@ -1,7 +1,7 @@
 {
   "name": "tradeasy",
   "version": "0.23.2",
-  "description": "Chrome MV3 extension: trade from Axiom/GMGN with your own hot wallet via Helius Sender",
+  "description": "Chrome MV3 extension: trade from Solana trading terminals with your own hot wallet via Helius Sender",
   "scripts": {
     "build": "node build.mjs",
     "test:offline": "esbuild test/harness.mjs --bundle --platform=node --format=cjs --outfile=test/.build/harness.cjs --log-level=warning && node test/.build/harness.cjs",
